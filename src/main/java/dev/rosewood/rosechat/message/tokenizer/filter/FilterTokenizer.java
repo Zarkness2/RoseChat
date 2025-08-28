@@ -4,6 +4,7 @@ import dev.rosewood.rosechat.api.RoseChatAPI;
 import dev.rosewood.rosechat.chat.PlayerData;
 import dev.rosewood.rosechat.chat.filter.Filter;
 import dev.rosewood.rosechat.config.Settings;
+import dev.rosewood.rosechat.manager.FilterManager.FilterPattern;
 import dev.rosewood.rosechat.message.MessageDirection;
 import dev.rosewood.rosechat.message.MessageUtils;
 import dev.rosewood.rosechat.message.PermissionArea;
@@ -67,8 +68,8 @@ public class FilterTokenizer extends Tokenizer {
 
             if (filter.useRegex()) {
                 List<Pattern> patterns = RoseChatAPI.getInstance().getFilterManager()
-                        .getCompiledPatterns().get(filter.id() + "-prefix");
-                if (patterns == null || patterns.isEmpty())
+                        .getCompiledPatterns(filter.id(), FilterPattern.PREFIX);
+                if (patterns.isEmpty())
                     continue;
 
                 Pattern pattern = patterns.getFirst();
@@ -111,8 +112,8 @@ public class FilterTokenizer extends Tokenizer {
 
             if (filter.useRegex()) {
                 List<Pattern> patterns = RoseChatAPI.getInstance().getFilterManager()
-                        .getCompiledPatterns().get(filter.id() + "-matches");
-                if (patterns == null || patterns.isEmpty())
+                        .getCompiledPatterns(filter.id(), FilterPattern.REGEX_MATCHES);
+                if (patterns.isEmpty())
                     continue;
 
                 for (Pattern pattern : patterns) {
@@ -322,8 +323,8 @@ public class FilterTokenizer extends Tokenizer {
             boolean matchesInline = false;
 
             List<Pattern> contentPatterns = RoseChatAPI.getInstance().getFilterManager()
-                    .getCompiledPatterns().get(filter.id() + "-matches");
-            if (contentPatterns != null && !contentPatterns.isEmpty()) {
+                    .getCompiledPatterns(filter.id(), FilterPattern.REGEX_MATCHES);
+            if (!contentPatterns.isEmpty()) {
                 for (Pattern pattern : contentPatterns) {
                     Matcher contentMatcher = pattern.matcher(content);
                     if (!contentMatcher.find())
@@ -336,8 +337,8 @@ public class FilterTokenizer extends Tokenizer {
                 matchesContent = true;
 
             List<Pattern> inlinePatterns = RoseChatAPI.getInstance().getFilterManager()
-                    .getCompiledPatterns().get(filter.id() + "-inline-matches");
-            if (inlinePatterns != null && !inlinePatterns.isEmpty()) {
+                    .getCompiledPatterns(filter.id(), FilterPattern.INLINE_MATCHES);
+            if (!inlinePatterns.isEmpty()) {
                 for (Pattern pattern : inlinePatterns) {
                     Matcher inlineMatcher = pattern.matcher(inline);
                     if (!inlineMatcher.find())
@@ -476,8 +477,8 @@ public class FilterTokenizer extends Tokenizer {
      */
     private int getMatchLength(String input, String playerName, String id) {
         Pattern stopPattern;
-        List<Pattern> stopPatterns = RoseChatAPI.getInstance().getFilterManager().getCompiledPatterns().get(id + "-stop");
-        if (stopPatterns == null || stopPatterns.isEmpty()) {
+        List<Pattern> stopPatterns = RoseChatAPI.getInstance().getFilterManager().getCompiledPatterns(id, FilterPattern.STOP);
+        if (stopPatterns.isEmpty()) {
             stopPattern = Pattern.compile(MessageUtils.PUNCTUATION_REGEX);
         } else {
             stopPattern = stopPatterns.getFirst();

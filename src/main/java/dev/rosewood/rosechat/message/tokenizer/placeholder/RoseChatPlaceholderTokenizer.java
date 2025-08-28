@@ -24,7 +24,7 @@ public class RoseChatPlaceholderTokenizer extends Tokenizer {
     public static final Pattern PATTERN = Pattern.compile("\\{(.*?)}");
 
     public RoseChatPlaceholderTokenizer() {
-        super("rosechat");
+        super("rosechat_placeholder");
     }
 
     @Override

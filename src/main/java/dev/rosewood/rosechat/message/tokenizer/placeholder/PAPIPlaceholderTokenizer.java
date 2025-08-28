@@ -21,7 +21,7 @@ public class PAPIPlaceholderTokenizer extends Tokenizer {
     private final boolean isBungee;
 
     public PAPIPlaceholderTokenizer(boolean isBungee) {
-        super(isBungee ? "bungee_papi" : "papi");
+        super(isBungee ? "bungee_papi_placeholder" : "papi_placeholder");
         this.isBungee = isBungee;
     }
 

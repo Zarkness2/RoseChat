@@ -11,7 +11,6 @@ import dev.rosewood.rosechat.message.tokenizer.decorator.ShadowColorDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.TokenDecorator;
 import dev.rosewood.rosegarden.utils.HexUtils;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,7 +35,6 @@ public class ColorTokenizer extends Tokenizer {
         this.collectMatches(MessageUtils.SPIGOT_HEX_REGEX_PARSED, params, results, null, false, false);
         this.collectMatches(MessageUtils.LEGACY_REGEX_PARSED, params, results, null, false, false);
 
-        Collections.sort(results);
         return results;
     }
 
@@ -88,7 +86,7 @@ public class ColorTokenizer extends Tokenizer {
 
         int hashIndex = string.indexOf('#');
         if (hashIndex == -1)
-            return ChatColor.getByChar(string.charAt(1));
+            return ChatColor.getByChar(lower.charAt(1));
 
         return HexUtils.translateHex(string.substring(hashIndex, hashIndex + 7));
     }

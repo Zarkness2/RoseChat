@@ -13,7 +13,8 @@ public abstract class Tokenizer {
     }
 
     /**
-     * Tokenizes the input and outputs a list of matches.
+     * Tokenizes the input and outputs a list of matches.<br>
+     * The returned List must not have overlaps.
      *
      * @param params The {@link TokenizerParams} for this tokenization.
      * @return A List of {@link TokenizerResult} or null (or an empty list) if the input is invalid.

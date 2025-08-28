@@ -1,6 +1,5 @@
 package dev.rosewood.rosechat.message.tokenizer;
 
-import dev.rosewood.rosechat.message.tokenizer.character.TextTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.discord.ToDiscordURLTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.discord.channel.FromDiscordChannelTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.discord.channel.ToDiscordChannelTokenizer;
@@ -10,6 +9,7 @@ import dev.rosewood.rosechat.message.tokenizer.discord.spoiler.FromDiscordSpoile
 import dev.rosewood.rosechat.message.tokenizer.discord.spoiler.ToDiscordSpoilerTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.discord.tag.FromDiscordTagTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.discord.tag.ToDiscordTagTokenizer;
+import dev.rosewood.rosechat.message.tokenizer.filter.FilterTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.markdown.MarkdownBlockQuoteTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.markdown.MarkdownBoldTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.markdown.MarkdownCodeBlockTokenizer;
@@ -20,12 +20,12 @@ import dev.rosewood.rosechat.message.tokenizer.markdown.MarkdownUnderlineTokeniz
 import dev.rosewood.rosechat.message.tokenizer.placeholder.PAPIPlaceholderTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.placeholder.RoseChatPlaceholderTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.placeholder.TokenPlaceholderTokenizer;
-import dev.rosewood.rosechat.message.tokenizer.filter.FilterTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.shader.ShaderTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.style.ColorTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.style.FormatTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.style.GradientTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.style.RainbowTokenizer;
+import dev.rosewood.rosechat.message.tokenizer.text.TextTokenizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

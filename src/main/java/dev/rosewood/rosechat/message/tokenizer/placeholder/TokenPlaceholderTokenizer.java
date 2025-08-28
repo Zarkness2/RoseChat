@@ -1,7 +1,5 @@
 package dev.rosewood.rosechat.message.tokenizer.placeholder;
 
-import dev.rosewood.rosechat.chat.filter.Filter;
-import dev.rosewood.rosechat.message.MessageUtils;
 import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;

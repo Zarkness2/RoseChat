@@ -10,7 +10,6 @@ import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
 import dev.rosewood.rosechat.message.tokenizer.decorator.FormatDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.TokenDecorator;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,7 +28,6 @@ public class FormatTokenizer extends Tokenizer {
         this.collectMatches(MessageUtils.LEGACY_REGEX_FORMATTING, params, results, true, true);
         this.collectMatches(MessageUtils.LEGACY_REGEX_FORMATTING_PARSED, params, results, false, false);
 
-        Collections.sort(results);
         return results;
     }
 

@@ -1,4 +1,4 @@
-package dev.rosewood.rosechat.message.tokenizer.character;
+package dev.rosewood.rosechat.message.tokenizer.text;
 
 import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;

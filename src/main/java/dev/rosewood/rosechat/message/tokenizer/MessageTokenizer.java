@@ -4,18 +4,19 @@ import com.google.common.base.Stopwatch;
 import dev.rosewood.rosechat.RoseChat;
 import dev.rosewood.rosechat.manager.DebugManager;
 import dev.rosewood.rosechat.message.MessageDirection;
+import dev.rosewood.rosechat.message.RoseMessage;
 import dev.rosewood.rosechat.message.RosePlayer;
+import dev.rosewood.rosechat.message.contents.MessageContents;
 import dev.rosewood.rosechat.message.tokenizer.composer.ChatComposer;
 import dev.rosewood.rosechat.message.tokenizer.decorator.DecoratorType;
 import dev.rosewood.rosechat.message.tokenizer.decorator.TokenDecorator;
 import dev.rosewood.rosechat.message.tokenizer.placeholder.RoseChatPlaceholderTokenizer;
-import dev.rosewood.rosechat.message.contents.MessageContents;
-import dev.rosewood.rosechat.message.RoseMessage;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -85,6 +86,7 @@ public class MessageTokenizer {
 
         TokenizerParams params = new TokenizerParams(this.roseMessage, this.viewer, content, parentToken,
                 this.roseMessage.shouldUsePlayerChatColor(), this.direction, this.outputs);
+
         for (Tokenizer tokenizer : this.tokenizers) {
             if (parentToken.getIgnoredTokenizers().contains(tokenizer))
                 continue;
@@ -92,9 +94,28 @@ public class MessageTokenizer {
             long startTime = System.nanoTime();
             this.totalParses++;
 
-            List<TokenizerResult> results = tokenizer.tokenize(params);
+            List<TokenizerResult> results;
+            try {
+                results = tokenizer.tokenize(params);
+            } catch (Exception e) {
+                RoseChat.getInstance().getLogger().warning("Tokenizer '" + tokenizer.getName() + "' threw an exception and was skipped");
+                e.printStackTrace();
+                continue;
+            }
+
             if (results == null || results.isEmpty())
                 continue;
+
+            // Check for overlaps and ensure ordering
+            results = new ArrayList<>(results);
+            Collections.sort(results);
+            for (int i = 1; i < results.size(); i++) {
+                TokenizerResult prev = results.get(i - 1);
+                TokenizerResult curr = results.get(i);
+                int prevEnd = prev.index() + prev.consumed();
+                if (curr.index() < prevEnd)
+                    throw new IllegalStateException("Tokenizer '" + tokenizer.getName() + "' produced overlapping results");
+            }
 
             double endTimeMs = (System.nanoTime() - startTime) / 1000000.0;
             if (tokenizer != Tokenizers.CHARACTER)
@@ -120,7 +141,7 @@ public class MessageTokenizer {
 
             if (DEBUG_MANAGER.isEnabled() && tokenizer != Tokenizers.CHARACTER) {
                 DEBUG_MANAGER.addMessage(() ->
-                        "[" + tokenizer.getClass().getSimpleName() + "] Tokenized: " + content + " -> " +
+                        "[" + tokenizer.getName() + "] Tokenized: " + content + " -> " +
                                 children.stream().filter(x -> x.getType() != TokenType.DECORATOR).map(Token::getContent).collect(Collectors.joining()) + " in " +
                                 NUMBER_FORMAT.format(endTimeMs) + "ms");
             }
