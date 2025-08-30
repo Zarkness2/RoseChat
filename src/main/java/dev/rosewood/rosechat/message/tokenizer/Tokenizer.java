@@ -2,7 +2,6 @@ package dev.rosewood.rosechat.message.tokenizer;
 
 import dev.rosewood.rosechat.message.PermissionArea;
 import java.util.List;
-import java.util.regex.Matcher;
 
 public abstract class Tokenizer {
 
@@ -79,14 +78,6 @@ public abstract class Tokenizer {
             params.getOutputs().getMissingPermissions().add(permission);
 
         return hasPermission;
-    }
-
-    public String getCaptureGroup(Matcher matcher, String group) {
-        try {
-            return matcher.group(group);
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            return null;
-        }
     }
 
     public Tokenizers.TokenizerBundle asBundle() {

@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 public class DiscordEmojiTokenizer extends Tokenizer {
 
-    public static final Pattern PATTERN = Pattern.compile("<a?(:[a-zA-Z0-9_\\-~]+:)[0-9]{18,19}>");
+    private static final Pattern PATTERN = Pattern.compile("<a?(:[a-zA-Z0-9_\\-~]+:)[0-9]{17,19}>");
 
     public DiscordEmojiTokenizer() {
         super("discord_emoji");

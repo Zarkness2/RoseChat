@@ -479,7 +479,7 @@ public class FilterTokenizer extends Tokenizer {
         Pattern stopPattern;
         List<Pattern> stopPatterns = RoseChatAPI.getInstance().getFilterManager().getCompiledPatterns(id, FilterPattern.STOP);
         if (stopPatterns.isEmpty()) {
-            stopPattern = Pattern.compile(MessageUtils.PUNCTUATION_REGEX);
+            stopPattern = MessageUtils.PUNCTUATION_REGEX;
         } else {
             stopPattern = stopPatterns.getFirst();
         }

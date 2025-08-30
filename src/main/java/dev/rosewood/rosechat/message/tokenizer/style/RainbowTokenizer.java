@@ -57,11 +57,11 @@ public class RainbowTokenizer extends Tokenizer {
             };
 
             // Retrieve parameters from the rainbow pattern.
-            String saturationGroup = this.getCaptureGroup(matcher, "saturation");
+            String saturationGroup = matcher.group("saturation");
             if (saturationGroup != null)
                 rainbowValues.saturation = Float.parseFloat(saturationGroup);
 
-            String brightnessGroup = this.getCaptureGroup(matcher, "brightness");
+            String brightnessGroup = matcher.group("brightness");
             if (brightnessGroup != null)
                 rainbowValues.brightness = Float.parseFloat(brightnessGroup);
 

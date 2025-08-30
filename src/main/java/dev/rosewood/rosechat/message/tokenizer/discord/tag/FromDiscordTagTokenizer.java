@@ -19,8 +19,8 @@ import org.bukkit.OfflinePlayer;
 
 public class FromDiscordTagTokenizer extends Tokenizer {
 
-    public static final Pattern TAG_PATTERN = Pattern.compile("<@([0-9]{18,19})>");
-    public static final Pattern ROLE_TAG_PATTERN = Pattern.compile("<@&([0-9]{18,19})>");
+    private static final Pattern TAG_PATTERN = Pattern.compile("<@([0-9]{17,19})>");
+    private static final Pattern ROLE_TAG_PATTERN = Pattern.compile("<@&([0-9]{17,19})>");
 
     public FromDiscordTagTokenizer() {
         super("from_discord_tag");

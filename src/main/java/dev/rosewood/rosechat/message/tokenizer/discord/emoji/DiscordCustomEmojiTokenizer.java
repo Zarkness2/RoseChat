@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 public class DiscordCustomEmojiTokenizer extends Tokenizer {
 
-    public static final Pattern PATTERN = Pattern.compile(":([a-zA-Z_]+):");
+    private static final Pattern PATTERN = Pattern.compile(":([a-zA-Z_]+):");
 
     public DiscordCustomEmojiTokenizer() {
         super("discord_custom_emoji");

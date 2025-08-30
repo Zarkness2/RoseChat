@@ -52,7 +52,7 @@ public class GradientTokenizer extends Tokenizer {
                 continue;
             }
 
-            List<Color> hexSteps = Arrays.stream(this.getCaptureGroup(matcher, "hex").substring(1).split(":"))
+            List<Color> hexSteps = Arrays.stream(matcher.group("hex").substring(1).split(":"))
                     .map(x -> x.length() != 4 ? x : String.format("#%s%s%s%s%s%s", x.charAt(1), x.charAt(1), x.charAt(2), x.charAt(2), x.charAt(3), x.charAt(3)))
                     .map(Color::decode)
                     .toList();

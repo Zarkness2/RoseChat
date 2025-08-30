@@ -8,13 +8,14 @@ import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FromDiscordChannelTokenizer extends Tokenizer {
 
-    public static final Pattern PATTERN = Pattern.compile("<#([0-9]{18,19})>");
+    private static final Pattern PATTERN = Pattern.compile("<#([0-9]{17,19})>");
 
     public FromDiscordChannelTokenizer() {
         super("from_discord_channel");
@@ -22,38 +23,42 @@ public class FromDiscordChannelTokenizer extends Tokenizer {
 
     @Override
     public List<TokenizerResult> tokenize(TokenizerParams params) {
-        if (true) return null;
-        String rawInput = params.getInput();
-        String input = rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR ? rawInput.substring(1) : rawInput;
-        if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR && !params.getSender().hasPermission("rosechat.escape"))
-            return null;
-
-        if (!input.startsWith("<"))
-            return null;
-
-        Matcher matcher = PATTERN.matcher(input);
-        if (!matcher.find() || matcher.start() != 0)
-            return null;
-
         DiscordChatProvider discord = RoseChatAPI.getInstance().getDiscord();
         if (discord == null)
             return null;
 
-        String channelName = discord.getChannelName(matcher.group(1));
-        String serverId = discord.getServerId();
-        String content = Settings.DISCORD_FORMAT_CHANNEL.get();
+        String input = params.getInput();
+        Matcher matcher = PATTERN.matcher(input);
 
-        if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR)
-            return List.of(new TokenizerResult(Token.text(input), input.length() + 1));
+        List<TokenizerResult> results = new ArrayList<>();
 
-        return this.hasTokenPermission(params, "rosechat.discordchannel") ?
-                List.of(new TokenizerResult(Token.group(content)
-                .placeholder("server_id", serverId)
-                .placeholder("channel_id", matcher.group(1))
-                .placeholder("channel_name", channelName)
-                .ignoreTokenizer(this)
-                .build(), matcher.group().length()))
-                : List.of(new TokenizerResult(Token.text(matcher.group()), matcher.group().length()));
+        while (matcher.find()) {
+            int start = matcher.start();
+            String match = matcher.group();
+
+            if (!this.hasTokenPermission(params, "rosechat.discordchannel")) {
+                results.add(new TokenizerResult(Token.text(match), start, match.length()));
+                continue;
+            }
+
+            if (start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR) {
+                results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
+                continue;
+            }
+
+            String channelName = discord.getChannelName(matcher.group(1));
+            String serverId = discord.getServerId();
+            String content = Settings.DISCORD_FORMAT_CHANNEL.get();
+
+            results.add(new TokenizerResult(Token.group(content)
+                    .placeholder("server_id", serverId)
+                    .placeholder("channel_id", matcher.group(1))
+                    .placeholder("channel_name", channelName)
+                    .ignoreTokenizer(this)
+                    .build(), start, match.length()));
+        }
+
+        return results;
     }
 
 }
