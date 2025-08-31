@@ -8,7 +8,10 @@ import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ToDiscordTagTokenizer extends Tokenizer {
 
@@ -18,30 +21,39 @@ public class ToDiscordTagTokenizer extends Tokenizer {
 
     @Override
     public List<TokenizerResult> tokenize(TokenizerParams params) {
-        if (true) return null;
-        String rawInput = params.getInput();
-        String input = rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR ? rawInput.substring(1) : rawInput;
-        if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR && !params.getSender().hasPermission("rosechat.escape"))
-            return null;
-
-        if (!Settings.CAN_TAG_MEMBERS.get())
-            return null;
-
-        if (!input.startsWith("@"))
-            return null;
-
-        if (!this.hasTokenPermission(params, "rosechat.tag"))
-            return null;
-
         DiscordChatProvider discord = RoseChatAPI.getInstance().getDiscord();
-        DiscordChatProvider.DetectedMention member = discord.matchPartialMember(input.substring(1));
-        if (member == null)
+        if (discord == null || !Settings.CAN_TAG_MEMBERS.get())
             return null;
 
-        if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR)
-            return List.of(new TokenizerResult(Token.text(input), input.length() + 1));
+        String input = params.getInput();
 
-        return List.of(new TokenizerResult(Token.text(member.mention()), member.consumedTextLength() + 1));
+        List<TokenizerResult> results = new ArrayList<>();
+
+        int index = -1;
+        while ((index = input.indexOf('@', index)) != -1) {
+            if (!this.hasTokenPermission(params, "rosechat.tag"))
+                return null;
+
+            if (index > 0 && input.charAt(index - 1) == MessageUtils.ESCAPE_CHAR) {
+                index++;
+                continue;
+            }
+
+            String name = input.substring(index + 1);
+            if (name.isEmpty())
+                return results;
+
+            DiscordChatProvider.DetectedMention member = discord.matchPartialMember(name);
+            if (member == null) {
+                index++;
+                continue;
+            }
+
+            results.add(new TokenizerResult(Token.text(member.mention()), index, member.consumedTextLength() + 1));
+            index += member.consumedTextLength();
+        }
+
+        return results;
     }
 
 }

@@ -312,13 +312,14 @@ public class DiscordSRVProvider implements DiscordChatProvider {
     public List<UUID> getPlayersWithRole(String id) {
         Role role = this.discord.getMainGuild().getRoleById(id);
         if (role == null)
-            return null;
+            return List.of();
 
         List<UUID> players = new ArrayList<>();
         for (Member member : this.discord.getMainGuild().getMembers()) {
             if (member.getRoles().contains(role)) {
                 UUID uuid = this.discord.getAccountLinkManager().getUuid(member.getId());
-                if (uuid != null) players.add(uuid);
+                if (uuid != null)
+                    players.add(uuid);
             }
         }
 
@@ -328,7 +329,7 @@ public class DiscordSRVProvider implements DiscordChatProvider {
     @Override
     public String getCustomEmoji(String name) {
         List<Emote> emotes = this.discord.getMainGuild().getEmotesByName(name, true);
-        return (emotes == null || emotes.isEmpty()) ? ":" + name + ":" : emotes.get(0).getAsMention();
+        return emotes.isEmpty() ? ":" + name + ":" : emotes.get(0).getAsMention();
     }
 
     @Override

@@ -2,6 +2,7 @@ package dev.rosewood.rosechat.message.tokenizer.discord.tag;
 
 import dev.rosewood.rosechat.api.RoseChatAPI;
 import dev.rosewood.rosechat.chat.filter.Filter;
+import dev.rosewood.rosechat.config.Settings;
 import dev.rosewood.rosechat.hook.discord.DiscordChatProvider;
 import dev.rosewood.rosechat.message.MessageUtils;
 import dev.rosewood.rosechat.message.RosePlayer;
@@ -10,6 +11,7 @@ import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizers;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -26,43 +28,64 @@ public class FromDiscordTagTokenizer extends Tokenizer {
         super("from_discord_tag");
     }
 
-    @Override
-    public List<TokenizerResult> tokenize(TokenizerParams params) {
-        if (true) return null;
-        String rawInput = params.getInput();
-        String input = rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR ? rawInput.substring(1) : rawInput;
-        if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR && !params.getSender().hasPermission("rosechat.escape"))
-            return null;
-
-        if (!input.startsWith("<"))
-            return null;
-
+    private void collectUserTags(DiscordChatProvider discord, TokenizerParams params, List<TokenizerResult> results) {
+        String input = params.getInput();
         Matcher matcher = TAG_PATTERN.matcher(input);
-        Matcher roleMatcher = ROLE_TAG_PATTERN.matcher(input);
 
-        String originalContent = null;
-        String content = null;
-        boolean isRole = false;
+        while (matcher.find()) {
+            int start = matcher.start();
+            String match = matcher.group();
+            String id = matcher.group(1);
 
-        if (matcher.find() && matcher.start() == 0) {
-            originalContent = input.substring(0, matcher.end());
-            content = matcher.group(1);
+            if (start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR) {
+                results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
+                continue;
+            }
+
+            UUID uuid = discord.getUUIDFromId(id);
+            if (uuid == null) {
+                results.add(new TokenizerResult(Token.group('@' + discord.getUserFromId(id))
+                        .ignoreTokenizer(Tokenizers.FILTER)
+                        .ignoreTokenizer(Tokenizers.BUNGEE_PAPI_PLACEHOLDER)
+                        .ignoreTokenizer(Tokenizers.PAPI_PLACEHOLDER)
+                        .ignoreTokenizer(Tokenizers.ROSECHAT_PLACEHOLDER)
+                        .ignoreTokenizer(Tokenizers.FORMAT)
+                        .ignoreTokenizer(Tokenizers.RAINBOW)
+                        .ignoreTokenizer(Tokenizers.GRADIENT)
+                        .encapsulate()
+                        .build(), start, match.length()));
+            } else {
+                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+                RosePlayer player = new RosePlayer(offlinePlayer);
+
+                if (player.isOffline()) {
+                    results.add(new TokenizerResult(Token.text('@' + discord.getUserFromId(id)), start, match.length()));
+                } else {
+                    results.add(new TokenizerResult(Token.group('@' + player.getName()).encapsulate().build(), start, match.length()));
+                }
+            }
         }
+    }
 
-        if (roleMatcher.find() && roleMatcher.start() == 0) {
-            originalContent = input.substring(0, roleMatcher.end());
-            content = roleMatcher.group(1);
-            isRole = true;
-        }
+    private void collectRoleTags(DiscordChatProvider discord, TokenizerParams params, List<TokenizerResult> results) {
+        String input = params.getInput();
+        Matcher matcher = ROLE_TAG_PATTERN.matcher(input);
 
-        if (originalContent == null)
-            return null;
+        while (matcher.find()) {
+            int start = matcher.start();
+            String match = matcher.group();
+            String id = matcher.group(1);
 
-        DiscordChatProvider discord = RoseChatAPI.getInstance().getDiscord();
-        String prefix = "@";
+            if (start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR) {
+                results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
+                continue;
+            }
 
-        if (isRole) {
-            params.getOutputs().getTaggedPlayers().addAll(discord.getPlayersWithRole(content));
+            String role = discord.getRoleFromId(id);
+            if (role == null)
+                continue;
+
+            params.getOutputs().getTaggedPlayers().addAll(discord.getPlayersWithRole(id));
 
             // Format and play the tag sound appropriately if a role is tagged.
             for (Filter filter : RoseChatAPI.getInstance().getFilters()) {
@@ -72,48 +95,34 @@ public class FromDiscordTagTokenizer extends Tokenizer {
                 if (!filter.tagPlayers())
                     continue;
 
-                if (!filter.prefix().equals(prefix))
+                if (!filter.prefix().equals("@"))
                     continue;
 
                 if (filter.sound() != null)
                     params.getOutputs().setSound(filter.sound());
             }
-        }
 
-        if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR)
-            return List.of(new TokenizerResult(Token.text(input), input.length() + 1));
-
-        Token.Builder token;
-        if (isRole) {
-            token = Token.group(prefix + discord.getRoleFromId(content))
+            results.add(new TokenizerResult(Token.group('@' + role)
                     .ignoreTokenizer(Tokenizers.FILTER)
                     .ignoreTokenizer(Tokenizers.BUNGEE_PAPI_PLACEHOLDER)
                     .ignoreTokenizer(Tokenizers.PAPI_PLACEHOLDER)
-                    .ignoreTokenizer(Tokenizers.ROSECHAT_PLACEHOLDER);
-        } else {
-            UUID uuid = discord.getUUIDFromId(content);
-            if (uuid == null) {
-                token = Token.group(prefix + discord.getUserFromId(content))
-                        .ignoreTokenizer(Tokenizers.FILTER)
-                        .ignoreTokenizer(Tokenizers.BUNGEE_PAPI_PLACEHOLDER)
-                        .ignoreTokenizer(Tokenizers.PAPI_PLACEHOLDER)
-                        .ignoreTokenizer(Tokenizers.ROSECHAT_PLACEHOLDER)
-                        .ignoreTokenizer(Tokenizers.FORMAT)
-                        .ignoreTokenizer(Tokenizers.RAINBOW)
-                        .ignoreTokenizer(Tokenizers.GRADIENT);
-            } else {
-                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
-                RosePlayer player = new RosePlayer(offlinePlayer);
-
-                if (player.isOffline())
-                    return List.of(new TokenizerResult(Token.text(prefix + discord.getUserFromId(content)), originalContent.length()));
-
-                token = Token.group(prefix + player.getName());
-            }
+                    .ignoreTokenizer(Tokenizers.ROSECHAT_PLACEHOLDER)
+                    .encapsulate().build(), start, match.length()));
         }
+    }
 
-        token.encapsulate();
-        return List.of(new TokenizerResult(token.build(), originalContent.length()));
+    @Override
+    public List<TokenizerResult> tokenize(TokenizerParams params) {
+        DiscordChatProvider discord = RoseChatAPI.getInstance().getDiscord();
+        if (discord == null)
+            return null;
+
+        List<TokenizerResult> results = new ArrayList<>();
+
+        this.collectUserTags(discord, params, results);
+        this.collectRoleTags(discord, params, results);
+
+        return results;
     }
 
 }
