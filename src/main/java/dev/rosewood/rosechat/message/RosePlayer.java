@@ -308,16 +308,18 @@ public class RosePlayer {
 
     public void updateDisplayName() {
         if (this.getPlayerData().getNickname() == null) {
-            if (RoseChat.getInstance().getNicknameProvider() != null)
-                RoseChat.getInstance().getNicknameProvider()
-                        .setNickname(this.asPlayer(), null);
+            Bukkit.getScheduler().runTask(RoseChat.getInstance(), () -> {
+                if (RoseChat.getInstance().getNicknameProvider() != null)
+                    RoseChat.getInstance().getNicknameProvider()
+                            .setNickname(this.asPlayer(), null);
 
-            if (Settings.UPDATE_PLAYER_LIST.get() && this.isPlayer())
-                this.asPlayer().setPlayerListName(null);
+                if (Settings.UPDATE_PLAYER_LIST.get() && this.isPlayer())
+                    this.asPlayer().setPlayerListName(null);
 
-            this.setDisplayName((String) null);
+                this.setDisplayName((String) null);
 
-            this.getPlayerData().setStrippedDisplayName(this.getRealName());
+                this.getPlayerData().setStrippedDisplayName(this.getRealName());
+            });
             return;
         }
 
