@@ -1,6 +1,7 @@
 package dev.rosewood.rosechat.manager;
 
 import dev.rosewood.rosechat.chat.filter.Filter;
+import dev.rosewood.rosechat.chat.filter.Filter.MatchType;
 import dev.rosewood.rosegarden.RosePlugin;
 import dev.rosewood.rosegarden.config.CommentedFileConfiguration;
 import dev.rosewood.rosegarden.manager.Manager;
@@ -54,6 +55,7 @@ public class FilterManager extends Manager {
     private Filter parseFilter(String id, ConfigurationSection section) {
         Filter filter = new Filter(id,
                 section.getStringList("matches"),
+                section.getString("match-type", "anywhere").equalsIgnoreCase("word") ? MatchType.WORD : MatchType.ANYWHERE,
                 section.getString("prefix"), section.getString("suffix"),
                 section.getStringList("inline-matches"),
                 section.getString("inline-prefix"), section.getString("inline-suffix"),
@@ -87,6 +89,12 @@ public class FilterManager extends Manager {
                 this.compile(id, FilterPattern.PREFIX, filter.prefix(), false);
         }
 
+        if (filter.inlinePrefix() != null && filter.inlineSuffix() != null && filter.prefix() != null && filter.suffix() != null) {
+            String regex = "(?:" + Pattern.quote(filter.prefix()) + "(.*?)" + Pattern.quote(filter.suffix()) + ")"
+                    + Pattern.quote(filter.inlinePrefix()) + "(.*?)" + Pattern.quote(filter.inlineSuffix());
+            this.compile(id, FilterPattern.INLINE_PREFIX_SUFFIX, regex, false);
+        }
+
         this.compile(id, FilterPattern.MATCHES, filter.matches(), true);
         this.compile(id, FilterPattern.STOP, filter.stop(), false);
     }
@@ -118,6 +126,13 @@ public class FilterManager extends Manager {
         return this.compiledPatterns.getOrDefault(patternType.buildName(id), List.of());
     }
 
+    public Pattern getCompiledPattern(String id, FilterPattern patternType) {
+        List<Pattern> patterns = this.compiledPatterns.get(patternType.buildName(id));
+        if (patterns == null || patterns.isEmpty())
+            return null;
+        return patterns.getFirst();
+    }
+
     private void compile(String id, FilterPattern patternType, String pattern, boolean quotePattern) {
         if (pattern != null)
             this.compile(id, patternType, List.of(pattern), quotePattern);
@@ -143,6 +158,7 @@ public class FilterManager extends Manager {
         REGEX_MATCHES("regex-matches"),
         MATCHES("matches"),
         INLINE_MATCHES("inline-matches"),
+        INLINE_PREFIX_SUFFIX("inline-prefix-suffix"),
         PREFIX("prefix"),
         STOP("stop");
 

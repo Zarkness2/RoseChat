@@ -6,6 +6,7 @@ import java.util.List;
 
 public record Filter(String id,
                      List<String> matches,
+                     MatchType matchType,
                      String prefix, String suffix,
                      List<String> inlineMatches, String inlinePrefix, String inlineSuffix,
                      String stop,
@@ -31,6 +32,11 @@ public record Filter(String id,
                      List<String> serverCommands,
                      List<String> playerCommands) {
 
+    public enum MatchType {
+        ANYWHERE,
+        WORD
+    }
+
     public boolean hasPermission(RosePlayer rosePlayer) {
         if (this.bypassPermission == null && this.usePermission == null)
             return true;
@@ -47,6 +53,7 @@ public record Filter(String id,
 
         return new Filter(this.id + "-tag",
                 new ArrayList<>(),
+                MatchType.ANYWHERE,
                 prefix, suffix,
                 this.inlineMatches,
                 this.inlinePrefix, this.inlineSuffix,

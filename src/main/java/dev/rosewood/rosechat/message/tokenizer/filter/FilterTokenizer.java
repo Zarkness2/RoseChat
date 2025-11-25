@@ -4,6 +4,7 @@ import dev.rosewood.rosechat.api.RoseChatAPI;
 import dev.rosewood.rosechat.chat.PlayerData;
 import dev.rosewood.rosechat.chat.filter.Filter;
 import dev.rosewood.rosechat.config.Settings;
+import dev.rosewood.rosechat.manager.FilterManager;
 import dev.rosewood.rosechat.manager.FilterManager.FilterPattern;
 import dev.rosewood.rosechat.message.MessageDirection;
 import dev.rosewood.rosechat.message.MessageUtils;
@@ -19,6 +20,8 @@ import dev.rosewood.rosechat.message.tokenizer.decorator.FontDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.HoverDecorator;
 import dev.rosewood.rosegarden.utils.HexUtils;
 import dev.rosewood.rosegarden.utils.StringPlaceholders;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,226 +31,196 @@ import org.bukkit.entity.Player;
 
 public class FilterTokenizer extends Tokenizer {
 
+    private final FilterManager filterManager;
+
     public FilterTokenizer() {
         super("filter");
+
+        this.filterManager = RoseChatAPI.getInstance().getFilterManager();
     }
 
     @Override
     public List<TokenizerResult> tokenize(TokenizerParams params) {
-        if (true) return null;
-        String rawInput = params.getInput();
-        String input = rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR ? rawInput.substring(1) : rawInput;
-        if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR && !params.getSender().hasPermission("rosechat.escape"))
-            return null;
-
         if (params.getLocation() != PermissionArea.CHANNEL && !params.getSender().hasPermission("rosechat.filters." + params.getLocationPermission()))
             return null;
 
-        for (Filter filter : RoseChatAPI.getInstance().getFilters()) {
-            if (filter.block())
+        List<TokenizerResult> results = new ArrayList<>();
+
+        Collection<Filter> filters = this.filterManager.getFilters().values();
+
+        // Inline filters (such as markdown urls)
+        for (Filter filter : filters) {
+            if (filter.block() || params.getIgnoredFilters().contains(filter.id()))
                 continue;
 
             if (filter.inlinePrefix() == null || filter.inlineSuffix() == null || filter.prefix() == null || filter.suffix() == null)
                 continue;
 
-            String regex = "(?:" + Pattern.quote(filter.prefix()) + "(.*?)" + Pattern.quote(filter.suffix()) + ")"
-                    + Pattern.quote(filter.inlinePrefix()) + "(.*?)" + Pattern.quote(filter.inlineSuffix());
-            Matcher matcher = Pattern.compile(regex).matcher(input);
-            if (!matcher.find() || matcher.start() != 0)
-                continue;
-
-            if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR)
-                return filter.escapable() ? List.of(new TokenizerResult(Token.text(input), input.length() + 1)) : null;
-
-            return this.handleInlineMatch(params, filter, input, matcher);
+            this.collectInlineMatches(filter, params, results);
         }
 
-        for (Filter filter : RoseChatAPI.getInstance().getFilters()) {
-            if (filter.block() || filter.prefix() == null)
+        // Prefix/suffix matches (such as <spoiler>content</spoiler>)
+        for (Filter filter : filters) {
+            if (filter.block() || filter.prefix() == null || params.getIgnoredFilters().contains(filter.id()))
                 continue;
 
             if (filter.useRegex()) {
-                List<Pattern> patterns = RoseChatAPI.getInstance().getFilterManager()
-                        .getCompiledPatterns(filter.id(), FilterPattern.PREFIX);
-                if (patterns.isEmpty())
-                    continue;
-
-                Pattern pattern = patterns.getFirst();
-                Matcher matcher = pattern.matcher(input);
-                if (!matcher.find() || matcher.start() != 0)
-                    continue;
-
-                if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR)
-                    return filter.escapable() ? List.of(new TokenizerResult(Token.text(input), input.length() + 1)) : null;
-
-                return this.handlePrefixMatch(params, filter, input, matcher.group());
-            }
-
-            String foundMatch = this.matches(filter, filter.prefix(), input);
-            if (foundMatch == null)
-                continue;
-
-            if (filter.suffix() != null) {
-                if (!input.contains(filter.suffix()))
-                    continue;
-
-                if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR)
-                    return filter.escapable() ? List.of(new TokenizerResult(Token.text(input), input.length() + 1)) : null;
-
-                // Filter has a suffix, content is within.
-                return this.handlePrefixSuffixMatch(params, filter, input);
+                this.collectPrefixRegexMatches(filter, params, results);
             } else {
-                if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR)
-                    return filter.escapable() ? List.of(new TokenizerResult(Token.text(input), input.length() + 1)) : null;
-
-                // Filter does not have a suffix, content is after the prefix.
-                return this.handlePrefixMatch(params, filter, input, foundMatch);
+                this.collectPrefixSuffixMatches(filter, params, results);
             }
         }
 
-        // Handle normal matches.
-        for (Filter filter : RoseChatAPI.getInstance().getFilters()) {
+        // Handle normal matches
+        for (Filter filter : filters) {
             if (filter.block() || filter.prefix() != null || filter.inlinePrefix() != null)
                 continue;
 
             if (filter.useRegex()) {
-                List<Pattern> patterns = RoseChatAPI.getInstance().getFilterManager()
-                        .getCompiledPatterns(filter.id(), FilterPattern.REGEX_MATCHES);
-                if (patterns.isEmpty())
-                    continue;
+                this.collectRegexMatches(filter, params, results);
+            } else {
+                this.collectMatches(filter, params, results);
+            }
+        }
 
-                for (Pattern pattern : patterns) {
-                    Matcher matcher = pattern.matcher(input);
-                    if (!matcher.find() || matcher.start() != 0)
-                        continue;
+        return results;
+    }
 
-                    if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR)
-                        return filter.escapable() ? List.of(new TokenizerResult(Token.text(input), input.length() + 1)) : null;
+    private void collectInlineMatches(Filter filter, TokenizerParams params, List<TokenizerResult> results) {
+        Pattern pattern = this.filterManager.getCompiledPattern(filter.id(), FilterPattern.INLINE_PREFIX_SUFFIX);
+        if (pattern == null)
+            return;
 
-                    // Found a regex match.
-                    return this.handleRegexMatch(params, filter, input, matcher);
-                }
+        String input = params.getInput();
+        Matcher matcher = pattern.matcher(input);
+        while (matcher.find()) {
+            int start = matcher.start();
+            int end = matcher.end();
+            String match = matcher.group();
+            if (TokenizerResult.overlaps(results, start, end))
+                continue;
 
+            if (filter.escapable() && start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape")) {
+                results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
                 continue;
             }
 
-            for (String match : filter.matches()) {
-                String foundMatch = this.matches(filter, match, input);
-                if (foundMatch == null || foundMatch.isEmpty())
+            String content = matcher.group(1);
+            String inline = matcher.group(2);
+
+            if (filter.useRegex()) {
+                boolean matchesContent = false;
+                boolean matchesInline = false;
+
+                List<Pattern> contentPatterns = RoseChatAPI.getInstance().getFilterManager()
+                        .getCompiledPatterns(filter.id(), FilterPattern.REGEX_MATCHES);
+                if (!contentPatterns.isEmpty()) {
+                    for (Pattern contentPattern : contentPatterns) {
+                        Matcher contentMatcher = contentPattern.matcher(content);
+                        if (!contentMatcher.find())
+                            continue;
+
+                        matchesContent = true;
+                        break;
+                    }
+                } else {
+                    matchesContent = true;
+                }
+
+                List<Pattern> inlinePatterns = RoseChatAPI.getInstance().getFilterManager().getCompiledPatterns(filter.id(), FilterPattern.INLINE_MATCHES);
+                if (!inlinePatterns.isEmpty()) {
+                    for (Pattern inlinePattern : inlinePatterns) {
+                        Matcher inlineMatcher = inlinePattern.matcher(inline);
+                        if (!inlineMatcher.find())
+                            continue;
+
+                        matchesInline = true;
+                        break;
+                    }
+                } else {
+                    matchesInline = true;
+                }
+
+                if (!matchesContent || !matchesInline)
                     continue;
-
-                if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR)
-                    return filter.escapable() ? List.of(new TokenizerResult(Token.text(input), input.length() + 1)) : null;
-
-                // Found a normal match.
-                return this.handleMatch(params, filter, input, foundMatch);
             }
-        }
 
-        return null;
-    }
-
-    private String matches(Filter filter, String match, String input) {
-        if (filter.sensitivity() == 0)
-            return input.startsWith(match) ? match : null;
-
-        String strippedMessage = ChatColor.stripColor(HexUtils.colorify(MessageUtils.stripAccents(input.toLowerCase())));
-        String[] splitMessage = input.split(" ");
-        String[] splitMessageStripped = strippedMessage.split(" ");
-        for (int i = 0; i < splitMessageStripped.length; i++) {
-            String word = splitMessage[i];
-            String wordStripped = splitMessageStripped[i];
-
-            double difference = MessageUtils.getLevenshteinDistancePercent(wordStripped, match);
-            if ((1 - difference) <= filter.sensitivity() / 100.0) {
-                return input.substring(input.indexOf(word), input.indexOf(word) + word.length());
+            if (!filter.hasPermission(params.getSender())) {
+                results.addAll(this.validateRemoval(start, match));
+                continue;
             }
+
+            if (this.checkToggled(params, filter))
+                continue;
+
+            String replacement = this.getReplacementForDirection(params, filter);
+            replacement = this.applySignFix(params, filter, replacement);
+
+            if (filter.matchLength()) {
+                String colorless = RoseChatAPI.getInstance().parse(params.getSender(), params.getReceiver(), content).build(ChatComposer.plain());
+                replacement = this.matchContentLength(replacement, colorless.length());
+            }
+
+            if (filter.tagPlayers())
+                this.tagPlayers(params, filter, content);
+
+            Token token = this.createFilterToken(params, filter, replacement)
+                    .placeholder("group_0", match)
+                    .placeholder("message", match)
+                    .placeholder("group_1", content)
+                    .placeholder("group_2", inline)
+                    .encapsulate()
+                    .build();
+
+            results.add(new TokenizerResult(token, start, match.length()));
         }
-
-        return null;
     }
 
-    private List<TokenizerResult> handleMatch(TokenizerParams params, Filter filter, String input, String match) {
-        if (!input.startsWith(match))
-            return null;
+    private void collectPrefixRegexMatches(Filter filter, TokenizerParams params, List<TokenizerResult> results) {
+        Pattern pattern = this.filterManager.getCompiledPattern(filter.id(), FilterPattern.PREFIX);
+        if (pattern == null)
+            return;
 
-        if (params.getIgnoredFilters().contains(filter.id()))
-            return null;
+        String input = params.getInput();
+        Matcher matcher = pattern.matcher(input);
+        while (matcher.find()) {
+            int start = matcher.start();
+            if (start != 0 && !Character.isSpaceChar(input.charAt(start - 1))) // Not a prefix if this isn't a match at the beginning of a word
+                continue;
 
-        if (!filter.hasPermission(params.getSender()))
-            return this.validateRemoval(match);
+            int end = matcher.end();
+            String match = matcher.group();
+            if (TokenizerResult.overlaps(results, start, end))
+                continue;
 
-        if (this.checkToggled(params, filter))
-            return null;
+            if (filter.escapable() && start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape")) {
+                results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
+                continue;
+            }
 
-        String content = this.getReplacementForDirection(params, filter);
-        content = this.applySignFix(params, filter, content);
-
-        Token.Builder token = this.createFilterToken(params, filter, content);
-        return List.of(new TokenizerResult(token.build(), match.length()));
-    }
-
-    private List<TokenizerResult> handleRegexMatch(TokenizerParams params, Filter filter, String input, Matcher matcher) {
-        String match = matcher.group();
-        if (!input.startsWith(match))
-            return null;
-
-        if (params.getIgnoredFilters().contains(filter.id()))
-            return null;
-
-        if (!filter.hasPermission(params.getSender()))
-            return this.validateRemoval(match);
-
-        if (this.checkToggled(params, filter))
-            return null;
-
-        String content = this.getReplacementForDirection(params, filter);
-        content = this.applySignFix(params, filter, content);
-
-        Token.Builder token = this.createFilterToken(params, filter, content);
-
-        // Apply placeholders for regex matches.
-        StringPlaceholders.Builder placeholders = StringPlaceholders.builder();
-        int groups = Math.max(9, matcher.groupCount() + 1);
-        for (int i = 0; i < groups; i++) {
-            String replacement = matcher.groupCount() < i || matcher.group(i) == null ?
-                    matcher.group(0) : matcher.group(i);
-            content = content.replace("%group_" + i + "%", replacement);
-            placeholders.add("group_" + i, replacement);
+            this.collectPrefixMatches(filter, params, results, start, end);
         }
-
-        token.placeholder("message", match)
-                .placeholder("extra", match)
-                .placeholder("tagged", "%group_1%")
-                .placeholders(placeholders.build());
-
-        token.ignoreTokenizer(this);
-
-        return List.of(new TokenizerResult(token.build(), match.length()));
     }
 
-    private List<TokenizerResult> handlePrefixMatch(TokenizerParams params, Filter filter, String input, String prefix) {
-        int endIndex = input.indexOf(" ");
+    private void collectPrefixMatches(Filter filter, TokenizerParams params, List<TokenizerResult> results, int start, int end) {
+        String input = params.getInput();
+        int endIndex = input.indexOf(" ", end);
         String match;
         String content;
 
         if (endIndex == -1)
             endIndex = input.length();
 
-        match = input.substring(0, endIndex);
-        content = input.substring(prefix.length(), endIndex);
+        match = input.substring(start, endIndex);
+        content = input.substring(end, endIndex);
 
-        if (!input.startsWith(match))
-            return null;
-
-        if (params.getIgnoredFilters().contains(filter.id()))
-            return null;
-
-        if (!filter.hasPermission(params.getSender()))
-            return this.validateRemoval(match);
+        if (!filter.hasPermission(params.getSender())) {
+            results.addAll(this.validateRemoval(start, match));
+            return;
+        }
 
         if (this.checkToggled(params, filter))
-            return null;
+            return;
 
         String replacement = this.getReplacementForDirection(params, filter);
         replacement = this.applySignFix(params, filter, replacement);
@@ -260,135 +233,238 @@ public class FilterTokenizer extends Tokenizer {
         if (filter.tagPlayers())
             this.tagPlayers(params, filter, content);
 
-        Token.Builder token = this.createFilterToken(params, filter, replacement);
-        token.placeholder("message", match)
+        Token.Builder token = this.createFilterToken(params, filter, replacement)
+                .placeholder("message", match)
                 .placeholder("tagged", match)
                 .placeholder("group_0", match)
                 .placeholder("group_1", content);
 
-        return List.of(new TokenizerResult(token.build(), match.length()));
+        results.add(new TokenizerResult(token.build(), start, match.length()));
     }
 
-    private List<TokenizerResult> handlePrefixSuffixMatch(TokenizerParams params, Filter filter, String input) {
-        String prefix = filter.prefix();
-        String suffix = filter.suffix();
+    private void collectPrefixSuffixMatches(Filter filter, TokenizerParams params, List<TokenizerResult> results) {
+        String input = params.getInput();
 
-        int endIndex = input.lastIndexOf(suffix) + suffix.length();
-        String match = input.substring(0, endIndex);
-        String content = input.substring(prefix.length(), input.lastIndexOf(suffix));
+        List<SensitivityMatch> prefixMatches = this.sensitivityMatch(input, filter.prefix(), filter.sensitivity(), filter.matchType());
+        if (prefixMatches.isEmpty())
+            return;
 
-        if (!input.startsWith(match))
-            return null;
+        if (filter.suffix() == null) {
+            for (SensitivityMatch sensitivityMatch : prefixMatches) {
+                int start = sensitivityMatch.start();
+                int end = sensitivityMatch.end();
+                String match = input.substring(start, end);
 
-        if (params.getIgnoredFilters().contains(filter.id()))
-            return null;
+                if (TokenizerResult.overlaps(results, start, end))
+                    continue;
 
-        if (!filter.hasPermission(params.getSender()))
-            return this.validateRemoval(match);
-
-        if (this.checkToggled(params, filter))
-            return null;
-
-        String replacement = this.getReplacementForDirection(params, filter);
-        replacement = this.applySignFix(params, filter, replacement);
-
-        if (filter.matchLength()) {
-            String colorless = RoseChatAPI.getInstance().parse(params.getSender(), params.getReceiver(), content).build(ChatComposer.plain());
-            replacement = this.matchContentLength(replacement, colorless.length());
-        }
-
-        if (filter.tagPlayers())
-            this.tagPlayers(params, filter, content);
-
-        Token.Builder token = this.createFilterToken(params, filter, replacement);
-        token.placeholder("message", match)
-                .placeholder("group_0", match)
-                .placeholder("group_1", content);
-
-        token.encapsulate(true);
-
-        return List.of(new TokenizerResult(token.build(), match.length()));
-    }
-
-    public List<TokenizerResult> handleInlineMatch(TokenizerParams params, Filter filter, String input, Matcher matcher) {
-        String originalContent = matcher.group();
-        String content = matcher.group(1);
-        String inline = matcher.group(2);
-
-        if (!input.startsWith(originalContent))
-            return null;
-
-        if (filter.useRegex()) {
-            boolean matchesContent = false;
-            boolean matchesInline = false;
-
-            List<Pattern> contentPatterns = RoseChatAPI.getInstance().getFilterManager()
-                    .getCompiledPatterns(filter.id(), FilterPattern.REGEX_MATCHES);
-            if (!contentPatterns.isEmpty()) {
-                for (Pattern pattern : contentPatterns) {
-                    Matcher contentMatcher = pattern.matcher(content);
-                    if (!contentMatcher.find())
-                        continue;
-
-                    matchesContent = true;
-                    break;
+                if (filter.escapable() && start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape")) {
+                    results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
+                    continue;
                 }
-            } else
-                matchesContent = true;
 
-            List<Pattern> inlinePatterns = RoseChatAPI.getInstance().getFilterManager()
-                    .getCompiledPatterns(filter.id(), FilterPattern.INLINE_MATCHES);
-            if (!inlinePatterns.isEmpty()) {
-                for (Pattern pattern : inlinePatterns) {
-                    Matcher inlineMatcher = pattern.matcher(inline);
-                    if (!inlineMatcher.find())
-                        continue;
+                this.collectPrefixMatches(filter, params, results, start, end);
+            }
+            return;
+        }
 
-                    matchesInline = true;
-                    break;
+        List<SensitivityMatch> suffixMatches = this.sensitivityMatch(input, filter.suffix(), filter.sensitivity(), filter.matchType());
+        if (suffixMatches.isEmpty())
+            return;
+
+        outer:
+        for (SensitivityMatch prefix : prefixMatches) {
+            int prefixStart = prefix.start();
+            int prefixEnd = prefix.end();
+
+            for (SensitivityMatch suffix : suffixMatches) {
+                int suffixStart = suffix.start();
+                int suffixEnd = suffix.end();
+
+                if (suffixStart < prefixEnd)
+                    continue;
+
+                if (TokenizerResult.overlaps(results, prefixStart, suffixEnd))
+                    continue;
+
+                String match = input.substring(prefixStart, suffixEnd);
+
+                if (filter.escapable() && prefixStart > 0 && input.charAt(prefixStart - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape")) {
+                    results.add(new TokenizerResult(Token.text(match), prefixStart - 1, match.length() + 1));
+                    continue;
                 }
-            } else
-                matchesInline = true;
 
-            if (!matchesContent || !matchesInline)
-                return null;
+                String content = match.substring(filter.prefix().length(), match.length() - filter.suffix().length());
+
+                if (!filter.hasPermission(params.getSender())) {
+                    results.addAll(this.validateRemoval(prefixStart, match));
+                    continue;
+                }
+
+                if (this.checkToggled(params, filter))
+                    continue;
+
+                String replacement = this.getReplacementForDirection(params, filter);
+                replacement = this.applySignFix(params, filter, replacement);
+
+                if (filter.matchLength()) {
+                    String colorless = RoseChatAPI.getInstance().parse(params.getSender(), params.getReceiver(), content).build(ChatComposer.plain());
+                    replacement = this.matchContentLength(replacement, colorless.length());
+                }
+
+                if (filter.tagPlayers())
+                    this.tagPlayers(params, filter, content);
+
+                Token.Builder token = this.createFilterToken(params, filter, replacement)
+                        .placeholder("message", match)
+                        .placeholder("group_0", match)
+                        .placeholder("group_1", content)
+                        .encapsulate();
+
+                results.add(new TokenizerResult(token.build(), prefixStart, match.length()));
+
+                continue outer; // Only allow matching once with the nearest suffix
+            }
         }
-
-        if (params.getIgnoredFilters().contains(filter.id()))
-            return null;
-
-        if (!filter.hasPermission(params.getSender()))
-            return this.validateRemoval(originalContent);
-
-        if (this.checkToggled(params, filter))
-            return null;
-
-        String replacement = this.getReplacementForDirection(params, filter);
-        replacement = this.applySignFix(params, filter, replacement);
-
-        if (filter.matchLength()) {
-            String colorless = RoseChatAPI.getInstance().parse(params.getSender(), params.getReceiver(), content).build(ChatComposer.plain());
-            replacement = this.matchContentLength(replacement, colorless.length());
-        }
-
-        if (filter.tagPlayers())
-            this.tagPlayers(params, filter, content);
-
-        Token.Builder token = this.createFilterToken(params, filter, replacement);
-        token.placeholder("group_0", originalContent)
-                .placeholder("message", originalContent)
-                .placeholder("group_1", content)
-                .placeholder("group_2", inline);
-
-        token.encapsulate(true);
-
-        return List.of(new TokenizerResult(token.build(), originalContent.length()));
     }
 
-    private List<TokenizerResult> validateRemoval(String match) {
+    private void collectRegexMatches(Filter filter, TokenizerParams params, List<TokenizerResult> results) {
+        String input = params.getInput();
+
+        List<Pattern> patterns = this.filterManager.getCompiledPatterns(filter.id(), FilterPattern.MATCHES);
+        for (Pattern pattern : patterns) {
+            Matcher matcher = pattern.matcher(input);
+            while (matcher.find()) {
+                int start = matcher.start();
+                int end = matcher.end();
+                String match = matcher.group();
+
+                if (TokenizerResult.overlaps(results, start, end))
+                    continue;
+
+                if (!filter.hasPermission(params.getSender())) {
+                    results.addAll(this.validateRemoval(start, match));
+                    continue;
+                }
+
+                if (this.checkToggled(params, filter))
+                    continue;
+
+                String content = this.getReplacementForDirection(params, filter);
+                content = this.applySignFix(params, filter, content);
+
+                Token.Builder token = this.createFilterToken(params, filter, content);
+
+                // Apply placeholders for regex matches.
+                StringPlaceholders.Builder placeholders = StringPlaceholders.builder();
+                int groups = Math.max(9, matcher.groupCount() + 1);
+                for (int i = 0; i < groups; i++) {
+                    String replacement = matcher.groupCount() < i || matcher.group(i) == null ?
+                            matcher.group(0) : matcher.group(i);
+                    content = content.replace("%group_" + i + "%", replacement);
+                    placeholders.add("group_" + i, replacement);
+                }
+
+                token.placeholder("message", match)
+                        .placeholder("extra", match)
+                        .placeholder("tagged", "%group_1%")
+                        .placeholders(placeholders.build())
+                        .ignoreTokenizer(this);
+
+                results.add(new TokenizerResult(token.build(), start, match.length()));
+            }
+        }
+    }
+
+    private void collectMatches(Filter filter, TokenizerParams params, List<TokenizerResult> results) {
+        String input = params.getInput();
+
+        for (String matchText : filter.matches()) {
+            List<SensitivityMatch> matches = this.sensitivityMatch(input, matchText, filter.sensitivity(), filter.matchType());
+            for (SensitivityMatch sensitivityMatch : matches) {
+                int start = sensitivityMatch.start();
+                int end = sensitivityMatch.end();
+                String match = input.substring(start, end);
+
+                if (TokenizerResult.overlaps(results, start, end))
+                    continue;
+
+                if (!filter.hasPermission(params.getSender())) {
+                    results.addAll(this.validateRemoval(start, match));
+                    continue;
+                }
+
+                if (this.checkToggled(params, filter))
+                    continue;
+
+                String content = this.getReplacementForDirection(params, filter);
+                content = this.applySignFix(params, filter, content);
+
+                Token.Builder token = this.createFilterToken(params, filter, content);
+                results.add(new TokenizerResult(token.build(), start, match.length()));
+            }
+        }
+    }
+
+    private List<SensitivityMatch> sensitivityMatch(String input, String match, int sensitivity, Filter.MatchType type) {
+        List<SensitivityMatch> matches = new ArrayList<>();
+        int length = match.length();
+
+        if (sensitivity == 0) {
+            switch (type) {
+                case ANYWHERE -> {
+                    int index = 0;
+                    while ((index = input.indexOf(match, index)) != -1) {
+                        int end = index + length;
+                        if (!SensitivityMatch.overlaps(matches, index, end))
+                            matches.add(new SensitivityMatch(index, end));
+                        index = end;
+                    }
+                }
+                case WORD -> {
+                    String[] words = input.split(" ");
+                    int charIndex = 0;
+                    for (String word : words) {
+                        if (word.equalsIgnoreCase(match)) {
+                            int end = charIndex + word.length();
+                            if (!SensitivityMatch.overlaps(matches, charIndex, end))
+                                matches.add(new SensitivityMatch(charIndex, end));
+                        }
+
+                        charIndex += word.length() + 1;
+                    }
+                }
+            }
+            return matches;
+        }
+
+        double distanceThreshold = sensitivity / 100.0;
+        String strippedMessage = ChatColor.stripColor(HexUtils.colorify(MessageUtils.stripAccents(input)));
+        String[] words = input.split(" ");
+        String[] strippedWords = strippedMessage.split(" ");
+
+        int charIndex = 0;
+        for (int i = 0; i < strippedWords.length; i++) {
+            String word = words[i];
+            String strippedWord = strippedWords[i];
+
+            double difference = MessageUtils.getLevenshteinDistancePercent(strippedWord, match);
+            if (1 - difference <= distanceThreshold) {
+                int end = charIndex + word.length();
+                if (!SensitivityMatch.overlaps(matches, charIndex, end))
+                    matches.add(new SensitivityMatch(charIndex, end));
+            }
+
+            charIndex += word.length() + 1;
+        }
+
+        return matches;
+    }
+
+    private List<TokenizerResult> validateRemoval(int start, String match) {
         return Settings.REMOVE_FILTERS.get() ?
-                List.of(new TokenizerResult(Token.text(" "), match.length())) :
-                null;
+                List.of(new TokenizerResult(Token.text(" "), start, match.length())) :
+                List.of();
     }
     
     private boolean checkToggled(TokenizerParams params, Filter filter) {
@@ -501,5 +577,18 @@ public class FilterTokenizer extends Tokenizer {
     }
 
     private record DetectedPlayer(Player player, int consumedTextLength) { }
+
+    private record SensitivityMatch(int start, int end) {
+        public boolean overlaps(int start, int end) {
+            return end > this.start && start < this.end;
+        }
+
+        public static boolean overlaps(List<SensitivityMatch> matches, int start, int end) {
+            for (SensitivityMatch match : matches)
+                if (match.overlaps(start, end))
+                    return true;
+            return false;
+        }
+    }
 
 }

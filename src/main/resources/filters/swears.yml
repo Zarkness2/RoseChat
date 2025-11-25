@@ -3,8 +3,8 @@
 # These can also be used with custom placeholders from custom-placeholders.yml
 # Check the wiki for more information: https://wiki.rosewooddev.io/RoseChat/configuration-files/#filtersyml
 
-# This filter matches both 'crap' and 'damn' and warns the player for using them.
-bannable-words:
+# This filter matches both 'damn' and warns the player
+warn-damn:
   matches:
     - damn
   # The sensitivity determines how similar this word can be to other words.
@@ -12,16 +12,26 @@ bannable-words:
   sensitivity: 20
   # Blocking the message stops it from being sent.
   block: true
+  # Execute a command to warn the player
   commands:
     server:
       - warn %player% Swearing
 
-replaceable-words:
+# This filter matches 'crap' with a bypass permission
+censor-crap:
   matches:
     - crap
+  match-type: word
   sensitivity: 20
   replacement: 'cr*p'
   # A bypass permission is used to allow certain players to not be caught by this filter.
   # This differs from a use permission which allows a player to use the filter.
   permission:
     bypass: "rosechat.admin"
+
+# This filter matches 'ass' and only replaces it
+replace-ass:
+  matches:
+    - ass
+  replacement: 'butt'
+  sensitivity: 30
