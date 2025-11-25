@@ -429,6 +429,9 @@ public class MessageUtils {
                 continue;
 
             player = Bukkit.getPlayer(playerData.getUUID());
+            if (player == null)
+                continue;
+
             if (ChatColor.stripColor(player.getDisplayName()).equalsIgnoreCase(name.toLowerCase()))
                 return player;
 

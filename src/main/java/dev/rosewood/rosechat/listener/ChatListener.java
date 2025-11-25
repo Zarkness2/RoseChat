@@ -97,7 +97,8 @@ public class ChatListener implements Listener {
                         .build();
                 channel.send(options);
 
-                player.updateDisplayName();
+                if (Settings.UPDATE_DISPLAY_NAMES.get())
+                    player.updateDisplayName();
                 return;
             }
         }
@@ -123,7 +124,8 @@ public class ChatListener implements Listener {
                 .message(message)
                 .build();
         channel.send(options);
-        player.updateDisplayName();
+        if (Settings.UPDATE_DISPLAY_NAMES.get())
+            player.updateDisplayName();
     }
 
 }
