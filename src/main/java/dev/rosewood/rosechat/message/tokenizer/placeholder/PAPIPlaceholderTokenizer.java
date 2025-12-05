@@ -40,7 +40,7 @@ public class PAPIPlaceholderTokenizer extends Tokenizer {
             if (!this.hasExtendedTokenPermission(params, "rosechat.placeholders", "rosechat.placeholder." + placeholderPermission))
                 continue;
 
-            if (start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape")) {
+            if (start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && checkPermission(params, "rosechat.escape")) {
                 results.add(new TokenizerResult(Token.text(placeholder), start - 1, placeholder.length() + 1));
                 continue;
             }

@@ -1,6 +1,8 @@
 package dev.rosewood.rosechat.chat.filter;
 
 import dev.rosewood.rosechat.message.RosePlayer;
+import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
+import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,6 +47,16 @@ public record Filter(String id,
             return true;
 
         return this.usePermission != null && rosePlayer.hasPermission(this.usePermission);
+    }
+
+    public boolean hasPermission(TokenizerParams params) {
+        if (this.bypassPermission == null && this.usePermission == null)
+            return true;
+
+        if (this.bypassPermission != null && !Tokenizer.checkPermission(params, this.bypassPermission))
+            return true;
+
+        return this.usePermission != null && Tokenizer.checkPermission(params, this.usePermission);
     }
 
     public Filter cloneAsTag() {

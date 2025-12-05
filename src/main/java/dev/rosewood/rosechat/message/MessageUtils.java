@@ -464,7 +464,7 @@ public class MessageUtils {
         RoseMessage message = RoseMessage.forLocation(sender, area);
         message.setPlayerInput(str);
         MessageContents components = MessageParser.roseChat().parse(message, sender, "{message}");
-        return components.outputs().getMissingPermissions().isEmpty();
+        return components.outputs().getCheckedPermissions().isEmpty();
 
 //        Matcher colorMatcher = VALID_LEGACY_REGEX.matcher(str);
 //        Matcher hexMatcher = HEX_REGEX.matcher(str);

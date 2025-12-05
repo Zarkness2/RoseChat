@@ -32,7 +32,7 @@ public class ToDiscordURLTokenizer extends Tokenizer {
             if (!this.hasTokenPermission(params, "rosechat.url"))
                 return null;
 
-            if (start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape")) {
+            if (start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && checkPermission(params, "rosechat.escape")) {
                 results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
                 continue;
             }

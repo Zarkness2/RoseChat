@@ -1,9 +1,20 @@
 package dev.rosewood.rosechat.message.tokenizer;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import dev.rosewood.rosechat.config.Settings;
 import dev.rosewood.rosechat.message.PermissionArea;
+import dev.rosewood.rosechat.message.RosePlayer;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public abstract class Tokenizer {
+
+    private static final int PERMISSION_CACHE_DURATION = Settings.PERMISSION_CACHE_DURATION.get();
+    private static final Cache<RosePlayer, CachedPermission> PERMISSION_CACHE = CacheBuilder.newBuilder()
+            .expireAfterWrite(PERMISSION_CACHE_DURATION, TimeUnit.SECONDS)
+            .build();
 
     private final String name;
 
@@ -45,7 +56,7 @@ public abstract class Tokenizer {
 
         return params.getSender().getIgnoredPermissions().contains(fullPermission.replace("rosechat.", ""))
                 || params.getSender().getIgnoredPermissions().contains("*")
-                || checkAndLogPermission(params, fullPermission);
+                || checkPermission(params, fullPermission);
     }
 
     /**
@@ -69,19 +80,40 @@ public abstract class Tokenizer {
 
         return params.getSender().getIgnoredPermissions().contains(extendedPermission.replace("rosechat.", ""))
                 || params.getSender().getIgnoredPermissions().contains("*")
-                || checkAndLogPermission(params, extendedPermission);
+                || checkPermission(params, extendedPermission);
     }
 
-    private boolean checkAndLogPermission(TokenizerParams params, String permission) {
-        boolean hasPermission = params.getSender().hasPermission(permission);
-        if (!hasPermission)
-            params.getOutputs().getMissingPermissions().add(permission);
+    /**
+     * Checks if a sender has a permission and caches the result
+     *
+     * @param params The TokenizerParams
+     * @param permission The permission to check
+     * @return true if the player has the permission, false otherwise
+     */
+    public static boolean checkPermission(TokenizerParams params, String permission) {
+        Boolean hasPermission = params.getOutputs().getCheckedPermissions().get(permission);
+        if (hasPermission != null)
+            return hasPermission;
 
-        return hasPermission;
+        if (PERMISSION_CACHE_DURATION == 0) {
+            hasPermission = params.getSender().hasPermission(permission);
+            params.getOutputs().getCheckedPermissions().put(permission, hasPermission);
+            return hasPermission;
+        }
+
+        try {
+            CachedPermission cachedPermission = PERMISSION_CACHE.get(params.getSender(), () -> new CachedPermission(permission, params.getSender().hasPermission(permission)));
+            params.getOutputs().getCheckedPermissions().put(permission, cachedPermission.has());
+            return cachedPermission.has();
+        } catch (ExecutionException e) {
+            throw new IllegalStateException("Failed to check permission: " + permission);
+        }
     }
 
     public Tokenizers.TokenizerBundle asBundle() {
         return new Tokenizers.TokenizerBundle(this.name, this);
     }
+
+    private record CachedPermission(String permission, boolean has) { }
 
 }

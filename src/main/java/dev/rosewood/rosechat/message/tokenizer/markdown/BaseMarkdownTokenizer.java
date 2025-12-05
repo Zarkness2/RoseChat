@@ -45,7 +45,7 @@ public abstract class BaseMarkdownTokenizer extends Tokenizer {
             if (this.isPlayerName(content))
                 continue;
 
-            if (start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape")) {
+            if (start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && checkPermission(params, "rosechat.escape")) {
                 results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
                 continue;
             }

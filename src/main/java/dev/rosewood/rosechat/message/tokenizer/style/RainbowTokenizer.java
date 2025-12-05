@@ -34,7 +34,7 @@ public class RainbowTokenizer extends Tokenizer {
             String match = matcher.group();
 
             boolean shadow = ShadowColorDecorator.VALID_VERSION && start > 0 && input.charAt(start - 1) == MessageUtils.SHADOW_PREFIX;
-            boolean escape = (start > (shadow ? 1 : 0)) && input.charAt(start - (shadow ? 2 : 1)) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape");
+            boolean escape = (start > (shadow ? 1 : 0)) && input.charAt(start - (shadow ? 2 : 1)) == MessageUtils.ESCAPE_CHAR && checkPermission(params, "rosechat.escape");
 
             int offset = (shadow ? 1 : 0) + (escape ? 1 : 0);
             int realStart = start - offset;

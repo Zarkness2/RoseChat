@@ -64,12 +64,12 @@ public class Tokenizers {
             ROSECHAT_PLACEHOLDER,
             TOKEN_PLACEHOLDER,
             PAPI_PLACEHOLDER,
+            FILTER,
             GRADIENT,
             RAINBOW,
             SHADER_COLORS,
             COLOR,
             FORMAT,
-            FILTER,
             CHARACTER);
 
     public static final TokenizerBundle COLORS_BUNDLE = new TokenizerBundle("colors",
@@ -88,24 +88,24 @@ public class Tokenizers {
             ROSECHAT_PLACEHOLDER,
             TOKEN_PLACEHOLDER,
             BUNGEE_PAPI_PLACEHOLDER,
+            FILTER,
             GRADIENT,
             RAINBOW,
             SHADER_COLORS,
             COLOR,
             FORMAT,
-            FILTER,
             CHARACTER);
 
     public static final TokenizerBundle DEFAULT_DISCORD_BUNDLE = new TokenizerBundle("default_discord",
             ROSECHAT_PLACEHOLDER,
             TOKEN_PLACEHOLDER,
             PAPI_PLACEHOLDER,
+            FILTER,
             GRADIENT,
             RAINBOW,
             SHADER_COLORS,
             COLOR,
             FORMAT,
-            FILTER,
             CHARACTER);
 
     public static final TokenizerBundle DISCORD_FORMATTING_BUNDLE = new TokenizerBundle("discord_formatting",

@@ -40,7 +40,7 @@ public class FormatTokenizer extends Tokenizer {
             int end = matcher.end();
             String match = matcher.group();
 
-            boolean escape = (start > 0) && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape");
+            boolean escape = (start > 0) && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && checkPermission(params, "rosechat.escape");
 
             int offset = (escape ? 1 : 0);
             int realStart = start - offset;

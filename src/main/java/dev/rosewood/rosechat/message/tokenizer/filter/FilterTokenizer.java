@@ -41,7 +41,7 @@ public class FilterTokenizer extends Tokenizer {
 
     @Override
     public List<TokenizerResult> tokenize(TokenizerParams params) {
-        if (params.getLocation() != PermissionArea.CHANNEL && !params.getSender().hasPermission("rosechat.filters." + params.getLocationPermission()))
+        if (params.getLocation() != PermissionArea.CHANNEL && !checkPermission(params, "rosechat.filters." + params.getLocationPermission()))
             return null;
 
         List<TokenizerResult> results = new ArrayList<>();
@@ -73,7 +73,7 @@ public class FilterTokenizer extends Tokenizer {
 
         // Handle normal matches
         for (Filter filter : filters) {
-            if (filter.block() || filter.prefix() != null || filter.inlinePrefix() != null)
+            if (filter.block() || filter.prefix() != null || filter.inlinePrefix() != null || params.getIgnoredFilters().contains(filter.id()))
                 continue;
 
             if (filter.useRegex()) {
@@ -100,7 +100,7 @@ public class FilterTokenizer extends Tokenizer {
             if (TokenizerResult.overlaps(results, start, end))
                 continue;
 
-            if (filter.escapable() && start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape")) {
+            if (filter.escapable() && start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && checkPermission(params, "rosechat.escape")) {
                 results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
                 continue;
             }
@@ -145,7 +145,7 @@ public class FilterTokenizer extends Tokenizer {
                     continue;
             }
 
-            if (!filter.hasPermission(params.getSender())) {
+            if (!filter.hasPermission(params)) {
                 results.addAll(this.validateRemoval(start, match));
                 continue;
             }
@@ -193,7 +193,7 @@ public class FilterTokenizer extends Tokenizer {
             if (TokenizerResult.overlaps(results, start, end))
                 continue;
 
-            if (filter.escapable() && start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape")) {
+            if (filter.escapable() && start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && checkPermission(params, "rosechat.escape")) {
                 results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
                 continue;
             }
@@ -214,7 +214,7 @@ public class FilterTokenizer extends Tokenizer {
         match = input.substring(start, endIndex);
         content = input.substring(end, endIndex);
 
-        if (!filter.hasPermission(params.getSender())) {
+        if (!filter.hasPermission(params)) {
             results.addAll(this.validateRemoval(start, match));
             return;
         }
@@ -258,7 +258,7 @@ public class FilterTokenizer extends Tokenizer {
                 if (TokenizerResult.overlaps(results, start, end))
                     continue;
 
-                if (filter.escapable() && start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape")) {
+                if (filter.escapable() && start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR && checkPermission(params, "rosechat.escape")) {
                     results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
                     continue;
                 }
@@ -289,14 +289,14 @@ public class FilterTokenizer extends Tokenizer {
 
                 String match = input.substring(prefixStart, suffixEnd);
 
-                if (filter.escapable() && prefixStart > 0 && input.charAt(prefixStart - 1) == MessageUtils.ESCAPE_CHAR && params.getSender().hasPermission("rosechat.escape")) {
+                if (filter.escapable() && prefixStart > 0 && input.charAt(prefixStart - 1) == MessageUtils.ESCAPE_CHAR && checkPermission(params, "rosechat.escape")) {
                     results.add(new TokenizerResult(Token.text(match), prefixStart - 1, match.length() + 1));
                     continue;
                 }
 
                 String content = match.substring(filter.prefix().length(), match.length() - filter.suffix().length());
 
-                if (!filter.hasPermission(params.getSender())) {
+                if (!filter.hasPermission(params)) {
                     results.addAll(this.validateRemoval(prefixStart, match));
                     continue;
                 }
@@ -331,7 +331,7 @@ public class FilterTokenizer extends Tokenizer {
     private void collectRegexMatches(Filter filter, TokenizerParams params, List<TokenizerResult> results) {
         String input = params.getInput();
 
-        List<Pattern> patterns = this.filterManager.getCompiledPatterns(filter.id(), FilterPattern.MATCHES);
+        List<Pattern> patterns = this.filterManager.getCompiledPatterns(filter.id(), FilterPattern.REGEX_MATCHES);
         for (Pattern pattern : patterns) {
             Matcher matcher = pattern.matcher(input);
             while (matcher.find()) {
@@ -342,7 +342,7 @@ public class FilterTokenizer extends Tokenizer {
                 if (TokenizerResult.overlaps(results, start, end))
                     continue;
 
-                if (!filter.hasPermission(params.getSender())) {
+                if (!filter.hasPermission(params)) {
                     results.addAll(this.validateRemoval(start, match));
                     continue;
                 }
@@ -389,7 +389,7 @@ public class FilterTokenizer extends Tokenizer {
                 if (TokenizerResult.overlaps(results, start, end))
                     continue;
 
-                if (!filter.hasPermission(params.getSender())) {
+                if (!filter.hasPermission(params)) {
                     results.addAll(this.validateRemoval(start, match));
                     continue;
                 }
