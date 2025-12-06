@@ -7,7 +7,10 @@ import dev.rosewood.rosechat.api.event.player.PlayerSendMessageEvent;
 import dev.rosewood.rosechat.chat.PlayerData;
 import dev.rosewood.rosechat.config.Settings;
 import dev.rosewood.rosechat.message.parser.MessageParser;
+import dev.rosewood.rosechat.message.tokenizer.MessageTokenizer;
+import dev.rosewood.rosechat.message.tokenizer.Tokenizers;
 import dev.rosewood.rosechat.message.tokenizer.composer.ChatComposer;
+import dev.rosewood.rosechat.message.tokenizer.placeholder.RoseChatPlaceholderTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.shader.ShaderTokenizer;
 import dev.rosewood.rosechat.message.MessageRules.RuleOutputs;
 import dev.rosewood.rosechat.message.contents.MessageContents;
@@ -463,8 +466,10 @@ public class MessageUtils {
 
         RoseMessage message = RoseMessage.forLocation(sender, area);
         message.setPlayerInput(str);
-        MessageContents components = MessageParser.roseChat().parse(message, sender, "{message}");
-        return components.outputs().getCheckedPermissions().isEmpty();
+        MessageContents components = MessageTokenizer.tokenize(message, sender, RoseChatPlaceholderTokenizer.MESSAGE_PLACEHOLDER, MessageDirection.PLAYER_TO_SERVER,
+                Tokenizers.FILTER.asBundle(),
+                Tokenizers.COLORS_BUNDLE);
+        return components.outputs().getMissingPermissions().isEmpty();
 
 //        Matcher colorMatcher = VALID_LEGACY_REGEX.matcher(str);
 //        Matcher hexMatcher = HEX_REGEX.matcher(str);

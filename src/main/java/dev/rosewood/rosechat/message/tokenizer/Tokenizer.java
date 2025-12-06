@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class Tokenizer {
 
     private static final int PERMISSION_CACHE_DURATION = Settings.PERMISSION_CACHE_DURATION.get();
-    private static final Cache<RosePlayer, CachedPermission> PERMISSION_CACHE = CacheBuilder.newBuilder()
+    private static final Cache<PermissionCacheKey, Boolean> PERMISSION_CACHE = CacheBuilder.newBuilder()
             .expireAfterWrite(PERMISSION_CACHE_DURATION, TimeUnit.SECONDS)
             .build();
 
@@ -46,8 +46,10 @@ public abstract class Tokenizer {
      */
     public boolean hasTokenPermission(TokenizerParams params, String permission) {
         // If the message doesn't exist, sent from the console, or has a location of 'NONE', then the sender should have permission.
-        if (params == null || params.getSender() == null
-                || params.getLocation() == PermissionArea.NONE || (params.getSender().isConsole())
+        if (params == null
+                || params.getSender() == null
+                || params.getLocation() == PermissionArea.NONE
+                || params.getSender().isConsole()
                 || !params.containsPlayerInput())
             return true;
 
@@ -69,8 +71,10 @@ public abstract class Tokenizer {
      */
     public boolean hasExtendedTokenPermission(TokenizerParams params, String permission, String extendedPermission) {
         // If the message doesn't exist, sent from the console, or has a location of 'NONE', then the sender should have permission.
-        if (params == null || params.getSender() == null
-                || params.getLocation() == PermissionArea.NONE || (params.getSender().isConsole())
+        if (params == null
+                || params.getSender() == null
+                || params.getLocation() == PermissionArea.NONE
+                || params.getSender().isConsole()
                 || !params.containsPlayerInput())
             return true;
 
@@ -102,9 +106,10 @@ public abstract class Tokenizer {
         }
 
         try {
-            CachedPermission cachedPermission = PERMISSION_CACHE.get(params.getSender(), () -> new CachedPermission(permission, params.getSender().hasPermission(permission)));
-            params.getOutputs().getCheckedPermissions().put(permission, cachedPermission.has());
-            return cachedPermission.has();
+            PermissionCacheKey cacheKey = new PermissionCacheKey(params.getSender(), permission);
+            boolean cachedPermission = PERMISSION_CACHE.get(cacheKey, () -> params.getSender().hasPermission(permission));
+            params.getOutputs().getCheckedPermissions().put(permission, cachedPermission);
+            return cachedPermission;
         } catch (ExecutionException e) {
             throw new IllegalStateException("Failed to check permission: " + permission);
         }
@@ -114,6 +119,6 @@ public abstract class Tokenizer {
         return new Tokenizers.TokenizerBundle(this.name, this);
     }
 
-    private record CachedPermission(String permission, boolean has) { }
+    private record PermissionCacheKey(RosePlayer player, String permission) { }
 
 }

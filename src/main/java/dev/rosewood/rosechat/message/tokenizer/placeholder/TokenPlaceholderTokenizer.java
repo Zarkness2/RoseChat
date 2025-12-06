@@ -1,6 +1,7 @@
 package dev.rosewood.rosechat.message.tokenizer.placeholder;
 
 import dev.rosewood.rosechat.message.tokenizer.Token;
+import dev.rosewood.rosechat.message.tokenizer.Token.PlayerInputState;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
@@ -44,7 +45,7 @@ public class TokenPlaceholderTokenizer extends Tokenizer {
 
             Token.Builder builder = Token.group(replacement);
             if (regexInputGroup)
-                builder.containsPlayerInput();
+                builder.playerInputState(PlayerInputState.PLAYER_INPUT);
 
             boolean ignoreSelf = replacement.contains(rawPlaceholder);
             if (ignoreSelf)

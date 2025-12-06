@@ -11,6 +11,7 @@ import dev.rosewood.rosechat.message.MessageUtils;
 import dev.rosewood.rosechat.message.PermissionArea;
 import dev.rosewood.rosechat.message.RosePlayer;
 import dev.rosewood.rosechat.message.tokenizer.Token;
+import dev.rosewood.rosechat.message.tokenizer.Token.PlayerInputState;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
@@ -504,6 +505,7 @@ public class FilterTokenizer extends Tokenizer {
     private Token.Builder createFilterToken(TokenizerParams params, Filter filter, String content) {
         Token.Builder token = Token.group(content)
                 .decorate(new FontDecorator(filter.font()))
+                .playerInputState(PlayerInputState.NOT_PLAYER_INPUT)
                 .ignoreTokenizer(Tokenizers.SHADER_COLORS)
                 .ignoreFilter(filter);
 

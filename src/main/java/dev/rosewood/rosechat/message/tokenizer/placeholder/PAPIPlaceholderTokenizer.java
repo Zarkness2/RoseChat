@@ -2,6 +2,7 @@ package dev.rosewood.rosechat.message.tokenizer.placeholder;
 
 import dev.rosewood.rosechat.message.MessageUtils;
 import dev.rosewood.rosechat.message.tokenizer.Token;
+import dev.rosewood.rosechat.message.tokenizer.Token.PlayerInputState;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
@@ -62,55 +63,33 @@ public class PAPIPlaceholderTokenizer extends Tokenizer {
                 continue;
             }
 
-            // Encapsulate if the placeholder only contains a colour or ends with a colour
-            boolean encapsulate = true;
+            Token.Builder token = Token.group(content).playerInputState(PlayerInputState.NOT_PLAYER_INPUT);
 
+            // Don't encapsulate if the placeholder only contains a colour or ends with a colour
             // Ignore everything that definitely isn't a colour.
             if (content.contains(ChatColor.COLOR_CHAR + "") || content.contains("&") || content.contains("#") || content.contains("<") || content.contains("{")) {
-                Matcher legacyMatcher = MessageUtils.LEGACY_REGEX_COMBINED.matcher(content);
-
-                while (legacyMatcher.find()) {
-                    if (content.trim().equalsIgnoreCase(legacyMatcher.group()) || content.trim().endsWith(legacyMatcher.group())) {
-                        encapsulate = false;
-                    }
-                }
-
-                if (encapsulate) {
-                    Matcher hexMatcher = MessageUtils.SPIGOT_HEX_REGEX_COMBINED.matcher(content);
-                    while (hexMatcher.find()) {
-                        if (content.trim().equalsIgnoreCase(hexMatcher.group()) || content.trim().endsWith(hexMatcher.group())) {
-                            encapsulate = false;
-                        }
-                    }
-                }
-
-                if (encapsulate) {
-                    Matcher gradientMatcher = MessageUtils.GRADIENT_PATTERN.matcher(content);
-                    while (gradientMatcher.find()) {
-                        if (content.trim().equalsIgnoreCase(gradientMatcher.group()) || content.trim().endsWith(gradientMatcher.group())) {
-                            encapsulate = false;
-                        }
-                    }
-                }
-
-                if (encapsulate) {
-                    Matcher rainbowMatcher = MessageUtils.RAINBOW_PATTERN.matcher(content);
-                    while (rainbowMatcher.find()) {
-                        if (content.trim().equals(rainbowMatcher.group()) || content.trim().endsWith(rainbowMatcher.group())) {
-                            encapsulate = false;
-                        }
-                    }
-                }
+                if (this.checkEncapsulation(content,
+                        MessageUtils.LEGACY_REGEX_COMBINED,
+                        MessageUtils.SPIGOT_HEX_REGEX_COMBINED,
+                        MessageUtils.GRADIENT_PATTERN,
+                        MessageUtils.RAINBOW_PATTERN))
+                    token.encapsulate();
             }
-
-            Token.Builder token = Token.group(content);
-            if (encapsulate)
-                token.encapsulate();
 
             results.add(new TokenizerResult(token.build(), start, placeholder.length()));
         }
 
         return results;
+    }
+
+    private boolean checkEncapsulation(String content, Pattern... patterns) {
+        for (Pattern pattern : patterns) {
+            Matcher matcher = pattern.matcher(content);
+            while (matcher.find())
+                if (content.trim().equals(matcher.group()) || content.trim().endsWith(matcher.group()))
+                    return false;
+        }
+        return true;
     }
 
 }

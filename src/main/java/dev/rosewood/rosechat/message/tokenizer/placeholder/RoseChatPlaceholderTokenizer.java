@@ -5,6 +5,7 @@ import dev.rosewood.rosechat.api.RoseChatAPI;
 import dev.rosewood.rosechat.message.MessageUtils;
 import dev.rosewood.rosechat.message.RosePlayer;
 import dev.rosewood.rosechat.message.tokenizer.Token;
+import dev.rosewood.rosechat.message.tokenizer.Token.PlayerInputState;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
@@ -49,12 +50,12 @@ public class RoseChatPlaceholderTokenizer extends Tokenizer {
                 }
 
                 if (params.getSender().getPlayerData() == null) {
-                    results.add(new TokenizerResult(Token.group(params.getPlayerMessage()).containsPlayerInput().build(), matcher.start(), placeholder.length()));
+                    results.add(new TokenizerResult(Token.group(params.getPlayerMessage()).playerInputState(PlayerInputState.PLAYER_INPUT).build(), matcher.start(), placeholder.length()));
                     continue;
                 }
 
                 String color = params.shouldUsePlayerChatColor() ? params.getSender().getPlayerData().getColor() : "";
-                results.add(new TokenizerResult(Token.group(color + params.getPlayerMessage()).containsPlayerInput().build(), matcher.start(), placeholder.length()));
+                results.add(new TokenizerResult(Token.group(color + params.getPlayerMessage()).playerInputState(PlayerInputState.PLAYER_INPUT).build(), matcher.start(), placeholder.length()));
                 continue;
             }
 

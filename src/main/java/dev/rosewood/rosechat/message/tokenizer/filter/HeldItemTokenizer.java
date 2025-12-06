@@ -6,6 +6,7 @@ import dev.rosewood.rosechat.config.Settings;
 import dev.rosewood.rosechat.manager.FilterManager.FilterPattern;
 import dev.rosewood.rosechat.message.MessageUtils;
 import dev.rosewood.rosechat.message.tokenizer.Token;
+import dev.rosewood.rosechat.message.tokenizer.Token.PlayerInputState;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
@@ -47,7 +48,7 @@ public class HeldItemTokenizer extends Tokenizer {
         if (filter == null)
             return null;
 
-        if (!params.getSender().isPlayer() || !this.hasTokenPermission(params, "rosechat.helditem"))
+        if (!params.getSender().isPlayer())
             return null;
 
         ItemStack itemStack = params.getSender().asPlayer().getInventory().getItemInMainHand();
@@ -79,6 +80,9 @@ public class HeldItemTokenizer extends Tokenizer {
                 continue;
             }
 
+            if (!this.hasTokenPermission(params, "rosechat.helditem"))
+                continue;
+
             int amount = itemStack.getAmount();
             String json = itemMeta.getAsString();
 
@@ -98,6 +102,7 @@ public class HeldItemTokenizer extends Tokenizer {
                     .placeholder("amount", amount)
                     .ignoreTokenizer(this)
                     .ignoreTokenizer(Tokenizers.FILTER)
+                    .playerInputState(PlayerInputState.NOT_PLAYER_INPUT)
                     .encapsulate()
                     .build(), start, match.length()));
         }

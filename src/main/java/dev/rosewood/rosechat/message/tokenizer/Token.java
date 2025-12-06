@@ -16,19 +16,19 @@ public class Token {
     private final TokenType type;
     private final String content;
     private final List<TokenDecorator> decorators;
-    private final boolean containsPlayerInput;
+    private final PlayerInputState playerInputState;
     private final StringPlaceholders placeholders;
     private final boolean encapsulate;
     private final Set<Tokenizer> ignoredTokenizers;
     private final Set<String> ignoredFilters;
 
-    private Token(TokenType type, String content, List<Token> children, List<TokenDecorator> decorators, boolean containsPlayerInput,
+    private Token(TokenType type, String content, List<Token> children, List<TokenDecorator> decorators, PlayerInputState playerInputState,
                   StringPlaceholders placeholders, boolean encapsulate, Set<Tokenizer> ignoredTokenizers, Set<String> ignoredFilters) {
         this.type = type;
         this.content = content;
         this.children = children;
         this.decorators = decorators;
-        this.containsPlayerInput = containsPlayerInput;
+        this.playerInputState = playerInputState;
         this.placeholders = placeholders;
         this.encapsulate = encapsulate;
         this.ignoredTokenizers = ignoredTokenizers;
@@ -82,10 +82,12 @@ public class Token {
     }
 
     /**
-     * @return true if this token contains player input, false otherwise
+     * @return the player input state of this Token
      */
-    public boolean containsPlayerInput() {
-        return this.containsPlayerInput;
+    public PlayerInputState getPlayerInputState() {
+        if (this.playerInputState == PlayerInputState.DEFAULT && this.parent != null)
+            return this.parent.getPlayerInputState();
+        return this.playerInputState;
     }
 
     /**
@@ -170,7 +172,7 @@ public class Token {
         private final String content;
         private final List<Token> children;
         private final List<TokenDecorator> decorators;
-        private boolean containsPlayerInput;
+        private PlayerInputState playerInputState;
         private StringPlaceholders.Builder placeholders;
         private boolean encapsulate;
         private Set<Tokenizer> ignoredTokenizers;
@@ -181,7 +183,7 @@ public class Token {
             this.content = content == null ? "" : content;
             this.children = new ArrayList<>();
             this.decorators = new ArrayList<>();
-            this.containsPlayerInput = false;
+            this.playerInputState = PlayerInputState.DEFAULT;
         }
 
         private Builder(TokenType tokenType, List<Token> children) {
@@ -189,7 +191,7 @@ public class Token {
             this.content = "";
             this.children = new ArrayList<>(children);
             this.decorators = new ArrayList<>();
-            this.containsPlayerInput = false;
+            this.playerInputState = PlayerInputState.DEFAULT;
         }
 
         public Builder decorate(TokenDecorator decorator) {
@@ -197,8 +199,8 @@ public class Token {
             return this;
         }
 
-        public Builder containsPlayerInput() {
-            this.containsPlayerInput = true;
+        public Builder playerInputState(PlayerInputState state) {
+            this.playerInputState = state;
             return this;
         }
 
@@ -254,7 +256,7 @@ public class Token {
                     this.content,
                     this.children,
                     this.decorators,
-                    this.containsPlayerInput,
+                    this.playerInputState,
                     this.placeholders == null ? StringPlaceholders.empty() : this.placeholders.build(),
                     this.encapsulate,
                     this.ignoredTokenizers == null ? Set.of() : this.ignoredTokenizers,
@@ -262,6 +264,21 @@ public class Token {
             );
         }
 
+    }
+
+    public enum PlayerInputState {
+        /**
+         * Copies the parent state
+         */
+        DEFAULT,
+        /**
+         * Is player input, checks permissions
+         */
+        PLAYER_INPUT,
+        /**
+         * Is not player input, does not check permissions
+         */
+        NOT_PLAYER_INPUT
     }
 
 }

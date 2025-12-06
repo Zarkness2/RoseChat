@@ -2,6 +2,7 @@ package dev.rosewood.rosechat.message.tokenizer.markdown;
 
 import dev.rosewood.rosechat.config.Settings;
 import dev.rosewood.rosechat.message.tokenizer.Token;
+import dev.rosewood.rosechat.message.tokenizer.Token.PlayerInputState;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
@@ -28,8 +29,8 @@ public class MarkdownBlockQuoteTokenizer extends Tokenizer {
 
         if (!format.contains("%input_1%")) {
             return List.of(new TokenizerResult(Token.group(
-                    Token.group(format).ignoreTokenizer(this).build(),
-                    Token.group(content).ignoreTokenizer(this).containsPlayerInput().build()
+                    Token.group(format).ignoreTokenizer(this).playerInputState(PlayerInputState.NOT_PLAYER_INPUT).build(),
+                    Token.group(content).ignoreTokenizer(this).playerInputState(PlayerInputState.PLAYER_INPUT).build()
             ).build(), 0, input.length()));
         }
 

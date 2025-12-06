@@ -50,7 +50,7 @@ public record Filter(String id,
     }
 
     public boolean hasPermission(TokenizerParams params) {
-        if (this.bypassPermission == null && this.usePermission == null)
+        if ((this.bypassPermission == null && this.usePermission == null) || !params.containsPlayerInput())
             return true;
 
         if (this.bypassPermission != null && !Tokenizer.checkPermission(params, this.bypassPermission))

@@ -5,6 +5,7 @@ import dev.rosewood.rosechat.message.MessageDirection;
 import dev.rosewood.rosechat.message.PermissionArea;
 import dev.rosewood.rosechat.message.RoseMessage;
 import dev.rosewood.rosechat.message.RosePlayer;
+import dev.rosewood.rosechat.message.tokenizer.Token.PlayerInputState;
 import dev.rosewood.rosegarden.utils.StringPlaceholders;
 import java.util.Set;
 
@@ -46,7 +47,7 @@ public class TokenizerParams {
     }
 
     public boolean containsPlayerInput() {
-        return this.parentToken.containsPlayerInput();
+        return this.parentToken.getPlayerInputState() == PlayerInputState.PLAYER_INPUT;
     }
 
     public boolean shouldUsePlayerChatColor() {

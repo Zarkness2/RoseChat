@@ -2,6 +2,7 @@ package dev.rosewood.rosechat.message.tokenizer.markdown;
 
 import dev.rosewood.rosechat.message.MessageUtils;
 import dev.rosewood.rosechat.message.tokenizer.Token;
+import dev.rosewood.rosechat.message.tokenizer.Token.PlayerInputState;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
@@ -76,9 +77,9 @@ public abstract class BaseMarkdownTokenizer extends Tokenizer {
     }
 
     private Token.Builder createToken(String content, boolean containsPlayerInput) {
-        Token.Builder builder = Token.group(content).ignoreTokenizer(this);
-        if (containsPlayerInput)
-            builder.containsPlayerInput();
+        Token.Builder builder = Token.group(content)
+                .ignoreTokenizer(this)
+                .playerInputState(containsPlayerInput ? PlayerInputState.PLAYER_INPUT : PlayerInputState.NOT_PLAYER_INPUT);
         for (Tokenizer ignoreTokenizer : this.ignoreTokenizers)
             builder.ignoreTokenizer(ignoreTokenizer);
         return builder;

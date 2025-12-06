@@ -118,7 +118,7 @@ public class MessageTokenizer {
             }
 
             double endTimeMs = (System.nanoTime() - startTime) / 1000000.0;
-            if (tokenizer != Tokenizers.CHARACTER)
+            if (tokenizer != Tokenizers.TEXT)
                 this.tokenMatches++;
 
             // Match, build tokens from matched content and then tokenize the content between matches
@@ -139,7 +139,7 @@ public class MessageTokenizer {
                 children.addAll(this.tokenizeContent(content.substring(currentIndex), parentToken, depth + 1));
             }
 
-            if (DEBUG_MANAGER.isEnabled() && tokenizer != Tokenizers.CHARACTER) {
+            if (DEBUG_MANAGER.isEnabled() && tokenizer != Tokenizers.TEXT) {
                 DEBUG_MANAGER.addMessage(() ->
                         "[" + tokenizer.getName() + "] Tokenized: " + content + " -> " +
                                 children.stream().filter(x -> x.getType() != TokenType.DECORATOR).map(Token::getContent).collect(Collectors.joining()) + " in " +
@@ -185,8 +185,8 @@ public class MessageTokenizer {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         List<Tokenizer> tokenizers = zipperMerge(Arrays.stream(tokenizerBundles).map(Tokenizers.TokenizerBundle::tokenizers).toList());
-        if (!tokenizers.contains(Tokenizers.CHARACTER))
-            tokenizers.addLast(Tokenizers.CHARACTER);
+        if (!tokenizers.contains(Tokenizers.TEXT))
+            tokenizers.addLast(Tokenizers.TEXT);
 
         MessageOutputs outputs = new MessageOutputs();
         MessageTokenizer tokenizer = new MessageTokenizer(roseMessage, viewer, direction, outputs, tokenizers);
