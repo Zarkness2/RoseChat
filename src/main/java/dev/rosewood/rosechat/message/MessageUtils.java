@@ -404,11 +404,13 @@ public class MessageUtils {
                 continue;
 
             player = Bukkit.getPlayer(playerData.getUUID());
-            if (ChatColor.stripColor(player.getDisplayName()).startsWith(name.toLowerCase()))
-                return player;
+            if (player != null) {
+                if (ChatColor.stripColor(player.getDisplayName()).startsWith(name.toLowerCase()))
+                    return player;
 
-            if (ChatColor.stripColor(HexUtils.colorify(playerData.getNickname().toLowerCase())).startsWith(name.toLowerCase()))
-                return player;
+                if (ChatColor.stripColor(HexUtils.colorify(playerData.getNickname().toLowerCase())).startsWith(name.toLowerCase()))
+                    return player;
+            }
         }
 
         return null;
