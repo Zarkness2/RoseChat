@@ -7,7 +7,10 @@ import dev.rosewood.rosechat.api.event.player.PlayerSendMessageEvent;
 import dev.rosewood.rosechat.chat.PlayerData;
 import dev.rosewood.rosechat.config.Settings;
 import dev.rosewood.rosechat.message.parser.MessageParser;
+import dev.rosewood.rosechat.message.tokenizer.MessageTokenizer;
+import dev.rosewood.rosechat.message.tokenizer.Tokenizers;
 import dev.rosewood.rosechat.message.tokenizer.composer.ChatComposer;
+import dev.rosewood.rosechat.message.tokenizer.placeholder.RoseChatPlaceholderTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.shader.ShaderTokenizer;
 import dev.rosewood.rosechat.message.MessageRules.RuleOutputs;
 import dev.rosewood.rosechat.message.contents.MessageContents;
@@ -38,19 +41,19 @@ public class MessageUtils {
 
     public static final char ESCAPE_CHAR = '\\';
     public static final char SHADOW_PREFIX = '$';
-    public static final String PUNCTUATION_REGEX = "[\\p{P}\\p{S}]";
+    public static final Pattern PUNCTUATION_REGEX = Pattern.compile("[\\p{P}\\p{S}]");
     public static final Pattern URL_PATTERN = Pattern.compile("(http(s)?://)?[-a-zA-Z0-9@:%_+~#=]{2,32}(?<!\\.)\\.(?!\\.)[a-zA-Z0-9()]{2,6}\\b([-a-zA-Z0-9()@:%_+~#?&/=]*(?<!\\.)\\.?(?!\\.))*");
-    public static final Pattern VALID_LEGACY_REGEX = Pattern.compile("&[0-9a-fA-F]");
-    public static final Pattern VALID_LEGACY_REGEX_PARSED = Pattern.compile("§[0-9a-fA-F]");
-    public static final Pattern VALID_LEGACY_REGEX_FORMATTING = Pattern.compile("&[k-oK-OrR]");
-    public static final Pattern VALID_LEGACY_REGEX_FORMATTING_PARSED = Pattern.compile("§[k-oK-OrR]");
-    public static final Pattern VALID_LEGACY_REGEX_COMBINED = Pattern.compile("([&§])[0-9a-fA-F]|([&§])[k-oK-OrR]");
+    public static final Pattern LEGACY_REGEX = Pattern.compile("&[0-9a-fA-F]");
+    public static final Pattern LEGACY_REGEX_PARSED = Pattern.compile("§[0-9a-fA-F]");
+    public static final Pattern LEGACY_REGEX_FORMATTING = Pattern.compile("&[k-oK-OrR]");
+    public static final Pattern LEGACY_REGEX_FORMATTING_PARSED = Pattern.compile("§[k-oK-OrR]");
+    public static final Pattern LEGACY_REGEX_COMBINED = Pattern.compile("([&§])[0-9a-fA-F]|([&§])[k-oK-OrR]");
     public static final Pattern HEX_REGEX = Pattern.compile("<#([A-Fa-f0-9]){6}>|\\{#([A-Fa-f0-9]){6}}|&#([A-Fa-f0-9]){6}|#([A-Fa-f0-9]){6}");
     public static final Pattern SPIGOT_HEX_REGEX = Pattern.compile("&x(&[A-Fa-f0-9]){6}");
     public static final Pattern SPIGOT_HEX_REGEX_PARSED = Pattern.compile("#(§[A-Fa-f0-9]){6}|§x(§[A-Fa-f0-9]){6}");
     public static final Pattern SPIGOT_HEX_REGEX_COMBINED = Pattern.compile("<#([A-Fa-f0-9]){6}>|\\{#([A-Fa-f0-9]){6}}|&#([A-Fa-f0-9]){6}|#([A-Fa-f0-9]){6}|&x(&[A-Fa-f0-9]){6}|#(§[A-Fa-f0-9]){6}|§x(§[A-Fa-f0-9]){6}");
-    public static final Pattern RAINBOW_PATTERN = Pattern.compile("<(?<type>rainbow|r)(#(?<speed>\\d+))?(:(?<saturation>\\d*\\.?\\d+))?(:(?<brightness>\\d*\\.?\\d+))?(:(?<loop>l|L|loop))?>");
-    public static final Pattern GRADIENT_PATTERN = Pattern.compile("<(?<type>gradient|g)(#(?<speed>\\d+))?(?<hex>(:#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})){2,})(:(?<loop>l|L|loop))?>");
+    public static final Pattern RAINBOW_PATTERN = Pattern.compile("<(rainbow|r)(#(?<speed>\\d+))?(:(?<saturation>\\d*\\.?\\d+))?(:(?<brightness>\\d*\\.?\\d+))?>");
+    public static final Pattern GRADIENT_PATTERN = Pattern.compile("<(gradient|g)(#(?<speed>\\d+))?(?<hex>(:#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})){2,})>");
 
     private static final boolean HAS_VERSIONED_SERIALIZER;
     static {
@@ -401,11 +404,13 @@ public class MessageUtils {
                 continue;
 
             player = Bukkit.getPlayer(playerData.getUUID());
-            if (ChatColor.stripColor(player.getDisplayName()).startsWith(name.toLowerCase()))
-                return player;
+            if (player != null) {
+                if (ChatColor.stripColor(player.getDisplayName()).startsWith(name.toLowerCase()))
+                    return player;
 
-            if (ChatColor.stripColor(HexUtils.colorify(playerData.getNickname().toLowerCase())).startsWith(name.toLowerCase()))
-                return player;
+                if (ChatColor.stripColor(HexUtils.colorify(playerData.getNickname().toLowerCase())).startsWith(name.toLowerCase()))
+                    return player;
+            }
         }
 
         return null;
@@ -463,7 +468,9 @@ public class MessageUtils {
 
         RoseMessage message = RoseMessage.forLocation(sender, area);
         message.setPlayerInput(str);
-        MessageContents components = MessageParser.roseChat().parse(message, sender, "{message}");
+        MessageContents components = MessageTokenizer.tokenize(message, sender, RoseChatPlaceholderTokenizer.MESSAGE_PLACEHOLDER, MessageDirection.PLAYER_TO_SERVER,
+                Tokenizers.FILTER.asBundle(),
+                Tokenizers.COLORS_BUNDLE);
         return components.outputs().getMissingPermissions().isEmpty();
 
 //        Matcher colorMatcher = VALID_LEGACY_REGEX.matcher(str);

@@ -2,6 +2,7 @@ package dev.rosewood.rosechat.message.tokenizer.decorator;
 
 import dev.rosewood.rosegarden.utils.HexUtils;
 import java.awt.Color;
+import java.util.Objects;
 import java.util.function.Function;
 import net.md_5.bungee.api.ChatColor;
 
@@ -9,10 +10,12 @@ public record ColorDecorator(Function<Integer, HexUtils.ColorGenerator> colorGen
 
     public ColorDecorator(Function<Integer, HexUtils.ColorGenerator> colorGeneratorFunction) {
         this(colorGeneratorFunction, false);
+        Objects.requireNonNull(colorGeneratorFunction);
     }
 
     public ColorDecorator(ChatColor chatColor) {
         this(x -> new SolidColorGenerator(chatColor), true);
+        Objects.requireNonNull(chatColor);
     }
 
     @Override

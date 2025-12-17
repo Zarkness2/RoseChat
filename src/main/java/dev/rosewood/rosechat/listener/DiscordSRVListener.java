@@ -285,7 +285,7 @@ public class DiscordSRVListener extends ListenerAdapter implements Listener {
         ComponentBuilder builder = new ComponentBuilder();
         builder.append(components, ComponentBuilder.FormatRetention.NONE);
         builder.append(edited);
-        if (builder.getCurrentComponent().getHoverEvent() == null && viewer.hasPermission("rosechat.editedmessages.see"))
+        if (builder.getCurrentComponent().getHoverEvent() == null && viewer.hasPermission("rosechat.editedmessages.see") && message.getOriginal() != null)
             builder.getCurrentComponent().setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, ChatComposer.decorated().composeJson(message.getOriginal())));
 
         return builder.create();

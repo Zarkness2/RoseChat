@@ -1,11 +1,14 @@
 package dev.rosewood.rosechat.chat.filter;
 
 import dev.rosewood.rosechat.message.RosePlayer;
+import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
+import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import java.util.ArrayList;
 import java.util.List;
 
 public record Filter(String id,
                      List<String> matches,
+                     MatchType matchType,
                      String prefix, String suffix,
                      List<String> inlineMatches, String inlinePrefix, String inlineSuffix,
                      String stop,
@@ -31,6 +34,11 @@ public record Filter(String id,
                      List<String> serverCommands,
                      List<String> playerCommands) {
 
+    public enum MatchType {
+        ANYWHERE,
+        WORD
+    }
+
     public boolean hasPermission(RosePlayer rosePlayer) {
         if (this.bypassPermission == null && this.usePermission == null)
             return true;
@@ -41,12 +49,23 @@ public record Filter(String id,
         return this.usePermission != null && rosePlayer.hasPermission(this.usePermission);
     }
 
+    public boolean hasPermission(TokenizerParams params) {
+        if ((this.bypassPermission == null && this.usePermission == null) || !params.containsPlayerInput())
+            return true;
+
+        if (this.bypassPermission != null && !Tokenizer.checkPermission(params, this.bypassPermission))
+            return true;
+
+        return this.usePermission != null && Tokenizer.checkPermission(params, this.usePermission);
+    }
+
     public Filter cloneAsTag() {
         String prefix = this.matches.getFirst();
         String suffix = prefix.charAt(0)  + "/" + prefix.substring(1);
 
         return new Filter(this.id + "-tag",
                 new ArrayList<>(),
+                MatchType.ANYWHERE,
                 prefix, suffix,
                 this.inlineMatches,
                 this.inlinePrefix, this.inlineSuffix,

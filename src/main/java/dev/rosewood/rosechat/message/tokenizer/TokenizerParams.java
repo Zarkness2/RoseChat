@@ -3,8 +3,9 @@ package dev.rosewood.rosechat.message.tokenizer;
 import dev.rosewood.rosechat.chat.channel.Channel;
 import dev.rosewood.rosechat.message.MessageDirection;
 import dev.rosewood.rosechat.message.PermissionArea;
-import dev.rosewood.rosechat.message.RosePlayer;
 import dev.rosewood.rosechat.message.RoseMessage;
+import dev.rosewood.rosechat.message.RosePlayer;
+import dev.rosewood.rosechat.message.tokenizer.Token.PlayerInputState;
 import dev.rosewood.rosegarden.utils.StringPlaceholders;
 import java.util.Set;
 
@@ -17,11 +18,9 @@ public class TokenizerParams {
     private final Token parentToken;
     private final boolean usePlayerChatColor;
     private final MessageDirection direction;
-    private final Set<String> ignoredFilters;
 
     public TokenizerParams(RoseMessage message, RosePlayer receiver, String input, Token parentToken,
-                           boolean usePlayerChatColor, MessageDirection direction, MessageOutputs outputs,
-                           Set<String> ignoredFilters) {
+                           boolean usePlayerChatColor, MessageDirection direction, MessageOutputs outputs) {
         this.outputs = outputs;
         this.message = message;
         this.receiver = receiver;
@@ -29,7 +28,6 @@ public class TokenizerParams {
         this.parentToken = parentToken;
         this.usePlayerChatColor = usePlayerChatColor;
         this.direction = direction;
-        this.ignoredFilters = ignoredFilters;
     }
 
     public MessageOutputs getOutputs() {
@@ -49,7 +47,7 @@ public class TokenizerParams {
     }
 
     public boolean containsPlayerInput() {
-        return this.parentToken.containsPlayerInput();
+        return this.parentToken.getPlayerInputState() == PlayerInputState.PLAYER_INPUT;
     }
 
     public boolean shouldUsePlayerChatColor() {
@@ -83,8 +81,12 @@ public class TokenizerParams {
         return this.direction;
     }
 
+    public Set<Tokenizer> getIgnoredTokenizers() {
+        return this.parentToken.getIgnoredTokenizers();
+    }
+
     public Set<String> getIgnoredFilters() {
-        return this.ignoredFilters;
+        return this.parentToken.getIgnoredFilters();
     }
 
 }

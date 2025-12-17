@@ -7,48 +7,62 @@ import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizers;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ToDiscordSpoilerTokenizer extends Tokenizer {
 
+    private final Pattern pattern;
+
     public ToDiscordSpoilerTokenizer() {
         super("to_discord_spoiler");
+
+        String spoiler = Settings.MARKDOWN_FORMAT_SPOILER.get();
+        String target = "%input_1%";
+        if (!spoiler.contains(target)) {
+            this.pattern = null;
+            return;
+        }
+
+        int inputIndex = spoiler.indexOf(target);
+        String prefix = spoiler.substring(0, inputIndex);
+        String suffix = spoiler.substring(inputIndex + target.length());
+        this.pattern = Pattern.compile(Pattern.quote(prefix) + "(.*?)" + Pattern.quote(suffix));
     }
 
     @Override
-    public TokenizerResult tokenize(TokenizerParams params) {
-        String rawInput = params.getInput();
-        String input = rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR ? rawInput.substring(1) : rawInput;
-        if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR && !params.getSender().hasPermission("rosechat.escape"))
+    public List<TokenizerResult> tokenize(TokenizerParams params) {
+        if (this.pattern == null)
             return null;
 
-        String spoiler = Settings.MARKDOWN_FORMAT_SPOILER.get();
-        if (!spoiler.contains("%input_1%"))
-            return null;
+        String input = params.getInput();
+        Matcher matcher = this.pattern.matcher(input);
 
-        int inputIndex = spoiler.indexOf("%input_1%");
+        List<TokenizerResult> results = new ArrayList<>();
 
-        String prefix = spoiler.substring(0, inputIndex);
-        String suffix = spoiler.substring(inputIndex + "%input_1%".length());
-        if (!input.startsWith(prefix))
-            return null;
+        while (matcher.find()) {
+            int start = matcher.start();
+            String match = matcher.group();
+            String content = matcher.group(1);
 
-        if (!input.endsWith(suffix))
-            return null;
+            if (!this.hasTokenPermission(params, "rosechat.spoiler"))
+                return null;
 
-        if (!this.hasTokenPermission(params, "rosechat.spoiler"))
-            return null;
+            if (start > 0 && input.charAt(start - 1) == MessageUtils.ESCAPE_CHAR) {
+                results.add(new TokenizerResult(Token.text(match), start - 1, match.length() + 1));
+                continue;
+            }
 
-        String originalContent = input.substring(0, input.lastIndexOf(suffix) + suffix.length());
-        String content = input.substring(prefix.length(), input.lastIndexOf(suffix));
+            results.add(new TokenizerResult(Token.group("||" + content + "||")
+                    .ignoreTokenizer(this)
+                    .ignoreTokenizer(Tokenizers.COLOR)
+                    .ignoreTokenizer(Tokenizers.FORMAT)
+                    .build(), start, match.length()));
+        }
 
-        if (rawInput.charAt(0) == MessageUtils.ESCAPE_CHAR)
-            return new TokenizerResult(Token.text(input), input.length() + 1);
-
-        return new TokenizerResult(Token.group("||" + content + "||")
-                .ignoreTokenizer(this)
-                .ignoreTokenizer(Tokenizers.COLOR)
-                .ignoreTokenizer(Tokenizers.FORMAT)
-                .build(), originalContent.length());
+        return results;
     }
 
 }

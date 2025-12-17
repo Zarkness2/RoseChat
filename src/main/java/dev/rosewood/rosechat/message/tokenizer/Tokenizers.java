@@ -1,6 +1,5 @@
 package dev.rosewood.rosechat.message.tokenizer;
 
-import dev.rosewood.rosechat.message.tokenizer.character.CharacterTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.discord.ToDiscordURLTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.discord.channel.FromDiscordChannelTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.discord.channel.ToDiscordChannelTokenizer;
@@ -10,6 +9,7 @@ import dev.rosewood.rosechat.message.tokenizer.discord.spoiler.FromDiscordSpoile
 import dev.rosewood.rosechat.message.tokenizer.discord.spoiler.ToDiscordSpoilerTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.discord.tag.FromDiscordTagTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.discord.tag.ToDiscordTagTokenizer;
+import dev.rosewood.rosechat.message.tokenizer.filter.FilterTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.markdown.MarkdownBlockQuoteTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.markdown.MarkdownBoldTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.markdown.MarkdownCodeBlockTokenizer;
@@ -20,12 +20,12 @@ import dev.rosewood.rosechat.message.tokenizer.markdown.MarkdownUnderlineTokeniz
 import dev.rosewood.rosechat.message.tokenizer.placeholder.PAPIPlaceholderTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.placeholder.RoseChatPlaceholderTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.placeholder.TokenPlaceholderTokenizer;
-import dev.rosewood.rosechat.message.tokenizer.filter.FilterTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.shader.ShaderTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.style.ColorTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.style.FormatTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.style.GradientTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.style.RainbowTokenizer;
+import dev.rosewood.rosechat.message.tokenizer.text.TextTokenizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,8 +40,8 @@ public class Tokenizers {
     public static final Tokenizer FROM_DISCORD_TAG = new FromDiscordTagTokenizer();
     public static final Tokenizer TO_DISCORD_CHANNEL = new ToDiscordChannelTokenizer();
     public static final Tokenizer FROM_DISCORD_CHANNEL = new FromDiscordChannelTokenizer();
-    public static final Tokenizer MARKDOWN_CODE_BLOCK = new MarkdownCodeBlockTokenizer();
     public static final Tokenizer MARKDOWN_CODE = new MarkdownCodeTokenizer();
+    public static final Tokenizer MARKDOWN_CODE_BLOCK = new MarkdownCodeBlockTokenizer();
     public static final Tokenizer MARKDOWN_BLOCK_QUOTE = new MarkdownBlockQuoteTokenizer();
     public static final Tokenizer DISCORD_CUSTOM_EMOJI = new DiscordCustomEmojiTokenizer();
     public static final Tokenizer MARKDOWN_BOLD = new MarkdownBoldTokenizer();
@@ -58,23 +58,24 @@ public class Tokenizers {
     public static final Tokenizer PAPI_PLACEHOLDER = new PAPIPlaceholderTokenizer(false);
     public static final Tokenizer BUNGEE_PAPI_PLACEHOLDER = new PAPIPlaceholderTokenizer(true);
     public static final Tokenizer FILTER = new FilterTokenizer();
-    public static final Tokenizer CHARACTER = new CharacterTokenizer();
+    public static final Tokenizer TEXT = new TextTokenizer();
 
     public static final TokenizerBundle DEFAULT_BUNDLE = new TokenizerBundle("default",
             ROSECHAT_PLACEHOLDER,
             TOKEN_PLACEHOLDER,
             PAPI_PLACEHOLDER,
+            FILTER,
             GRADIENT,
             RAINBOW,
             SHADER_COLORS,
             COLOR,
             FORMAT,
-            FILTER,
-            CHARACTER);
+            TEXT);
 
     public static final TokenizerBundle COLORS_BUNDLE = new TokenizerBundle("colors",
             GRADIENT,
             RAINBOW,
+            SHADER_COLORS,
             COLOR,
             FORMAT);
 
@@ -88,25 +89,25 @@ public class Tokenizers {
             ROSECHAT_PLACEHOLDER,
             TOKEN_PLACEHOLDER,
             BUNGEE_PAPI_PLACEHOLDER,
+            FILTER,
             GRADIENT,
             RAINBOW,
             SHADER_COLORS,
             COLOR,
             FORMAT,
-            FILTER,
-            CHARACTER);
+            TEXT);
 
     public static final TokenizerBundle DEFAULT_DISCORD_BUNDLE = new TokenizerBundle("default_discord",
             ROSECHAT_PLACEHOLDER,
             TOKEN_PLACEHOLDER,
             PAPI_PLACEHOLDER,
+            FILTER,
             GRADIENT,
             RAINBOW,
             SHADER_COLORS,
             COLOR,
             FORMAT,
-            FILTER,
-            CHARACTER);
+            TEXT);
 
     public static final TokenizerBundle DISCORD_FORMATTING_BUNDLE = new TokenizerBundle("discord_formatting",
             MARKDOWN_CODE_BLOCK,

@@ -1,7 +1,6 @@
 package dev.rosewood.rosechat.message.tokenizer.composer.decorator.adventure;
 
 import dev.rosewood.rosechat.message.tokenizer.Token;
-import dev.rosewood.rosechat.message.tokenizer.composer.decorator.bungee.BungeeTokenDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.ClickDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.ColorDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.DecoratorType;

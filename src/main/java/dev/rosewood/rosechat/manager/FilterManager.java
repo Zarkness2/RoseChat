@@ -1,6 +1,7 @@
 package dev.rosewood.rosechat.manager;
 
 import dev.rosewood.rosechat.chat.filter.Filter;
+import dev.rosewood.rosechat.chat.filter.Filter.MatchType;
 import dev.rosewood.rosegarden.RosePlugin;
 import dev.rosewood.rosegarden.config.CommentedFileConfiguration;
 import dev.rosewood.rosegarden.manager.Manager;
@@ -26,8 +27,6 @@ public class FilterManager extends Manager {
 
     @Override
     public void reload() {
-        this.filters.clear();
-
         File filtersFolder = new File(this.rosePlugin.getDataFolder(), "filters/");
         if (!filtersFolder.exists()) {
             filtersFolder.mkdirs();
@@ -36,7 +35,11 @@ public class FilterManager extends Manager {
             this.rosePlugin.saveResource("filters/swears.yml", false);
         }
 
-        for (File file : filtersFolder.listFiles()) {
+        File[] filterFiles = filtersFolder.listFiles();
+        if (filterFiles == null)
+            return;
+
+        for (File file : filterFiles) {
             CommentedFileConfiguration config = CommentedFileConfiguration.loadConfiguration(file);
             for (String id : config.getKeys(false)) {
                 ConfigurationSection section = config.getConfigurationSection(id);
@@ -44,8 +47,7 @@ public class FilterManager extends Manager {
                     continue;
 
                 Filter filter = this.parseFilter(id, section);
-                this.precompilePatterns(id, filter);
-                this.filters.put(id, filter);
+                this.addFilter(id, filter);
             }
         }
     }
@@ -53,6 +55,7 @@ public class FilterManager extends Manager {
     private Filter parseFilter(String id, ConfigurationSection section) {
         Filter filter = new Filter(id,
                 section.getStringList("matches"),
+                section.getString("match-type", "anywhere").equalsIgnoreCase("word") ? MatchType.WORD : MatchType.ANYWHERE,
                 section.getString("prefix"), section.getString("suffix"),
                 section.getStringList("inline-matches"),
                 section.getString("inline-prefix"), section.getString("inline-suffix"),
@@ -78,33 +81,28 @@ public class FilterManager extends Manager {
     }
 
     private void precompilePatterns(String id, Filter filter) {
-        List<Pattern> matches = new ArrayList<>();
-        List<Pattern> inlineMatches = new ArrayList<>();
-
         if (filter.useRegex()) {
-            for (String match : filter.matches())
-                matches.add(Pattern.compile(match));
-
-            if (!matches.isEmpty())
-                this.compiledPatterns.put(id + "-matches", matches);
-
-            for (String match : filter.inlineMatches())
-                inlineMatches.add(Pattern.compile(match));
-
-            if (!inlineMatches.isEmpty())
-                this.compiledPatterns.put(id + "-inline-matches", inlineMatches);
+            this.compile(id, FilterPattern.REGEX_MATCHES, filter.matches(), false);
+            this.compile(id, FilterPattern.INLINE_MATCHES, filter.inlineMatches(), false);
 
             if (filter.prefix() != null && filter.inlineMatches().isEmpty())
-                this.compiledPatterns.put(id + "-prefix", List.of(Pattern.compile(filter.prefix())));
+                this.compile(id, FilterPattern.PREFIX, filter.prefix(), false);
         }
 
-        if (filter.stop() != null)
-            this.compiledPatterns.put(id + "-stop", List.of(Pattern.compile(filter.stop())));
+        if (filter.inlinePrefix() != null && filter.inlineSuffix() != null && filter.prefix() != null && filter.suffix() != null) {
+            String regex = "(?:" + Pattern.quote(filter.prefix()) + "(.*?)" + Pattern.quote(filter.suffix()) + ")"
+                    + Pattern.quote(filter.inlinePrefix()) + "(.*?)" + Pattern.quote(filter.inlineSuffix());
+            this.compile(id, FilterPattern.INLINE_PREFIX_SUFFIX, regex, false);
+        }
+
+        this.compile(id, FilterPattern.MATCHES, filter.matches(), true);
+        this.compile(id, FilterPattern.STOP, filter.stop(), false);
     }
 
     @Override
     public void disable() {
-
+        this.filters.clear();
+        this.compiledPatterns.clear();
     }
 
     public Filter getFilter(String id) {
@@ -112,6 +110,7 @@ public class FilterManager extends Manager {
     }
 
     public void addFilter(String id, Filter filter) {
+        this.precompilePatterns(id, filter);
         this.filters.put(id, filter);
     }
 
@@ -123,8 +122,55 @@ public class FilterManager extends Manager {
         return this.filters;
     }
 
-    public Map<String, List<Pattern>> getCompiledPatterns() {
-        return this.compiledPatterns;
+    public List<Pattern> getCompiledPatterns(String id, FilterPattern patternType) {
+        return this.compiledPatterns.getOrDefault(patternType.buildName(id), List.of());
+    }
+
+    public Pattern getCompiledPattern(String id, FilterPattern patternType) {
+        List<Pattern> patterns = this.compiledPatterns.get(patternType.buildName(id));
+        if (patterns == null || patterns.isEmpty())
+            return null;
+        return patterns.getFirst();
+    }
+
+    private void compile(String id, FilterPattern patternType, String pattern, boolean quotePattern) {
+        if (pattern != null)
+            this.compile(id, patternType, List.of(pattern), quotePattern);
+    }
+
+    private void compile(String id, FilterPattern patternType, List<String> patterns, boolean quotePattern) {
+        if (patterns == null || patterns.isEmpty())
+            return;
+
+        List<Pattern> compiled = new ArrayList<>();
+        for (String pattern : patterns) {
+            if (quotePattern) {
+                compiled.add(Pattern.compile(Pattern.quote(pattern)));
+            } else {
+                compiled.add(Pattern.compile(pattern));
+            }
+        }
+
+        this.compiledPatterns.put(patternType.buildName(id), compiled);
+    }
+
+    public enum FilterPattern {
+        REGEX_MATCHES("regex-matches"),
+        MATCHES("matches"),
+        INLINE_MATCHES("inline-matches"),
+        INLINE_PREFIX_SUFFIX("inline-prefix-suffix"),
+        PREFIX("prefix"),
+        STOP("stop");
+
+        private final String suffix;
+
+        FilterPattern(String suffix) {
+            this.suffix = suffix;
+        }
+
+        public String buildName(String filterId) {
+            return filterId + "-" + this.suffix;
+        }
     }
 
 }

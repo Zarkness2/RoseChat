@@ -3,9 +3,12 @@ package dev.rosewood.rosechat.message.tokenizer;
 import dev.rosewood.rosechat.message.RosePlayer;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * A mutable object that represents outputs from parsing a message
@@ -13,7 +16,7 @@ import java.util.UUID;
 public class MessageOutputs {
 
     private final List<UUID> taggedPlayers;
-    private final Set<String> missingPermissions;
+    private final Map<String, Boolean> checkedPermissions;
     private final List<String> serverCommands;
     private final List<String> playerCommands;
     private String sound;
@@ -22,7 +25,7 @@ public class MessageOutputs {
 
     public MessageOutputs() {
         this.taggedPlayers = new ArrayList<>();
-        this.missingPermissions = new HashSet<>();
+        this.checkedPermissions = new LinkedHashMap<>();
         this.serverCommands = new ArrayList<>();
         this.playerCommands = new ArrayList<>();
     }
@@ -56,7 +59,13 @@ public class MessageOutputs {
     }
 
     public Set<String> getMissingPermissions() {
-        return this.missingPermissions;
+        return this.checkedPermissions.entrySet().stream()
+                .filter(x -> !x.getValue()).map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+    }
+
+    public Map<String, Boolean> getCheckedPermissions() {
+        return this.checkedPermissions;
     }
 
     public RosePlayer getPlaceholderTarget() {
@@ -65,16 +74,6 @@ public class MessageOutputs {
 
     public void setPlaceholderTarget(RosePlayer placeholderTarget) {
         this.placeholderTarget = placeholderTarget;
-    }
-
-    public void reset() {
-        this.taggedPlayers.clear();
-        this.missingPermissions.clear();
-        this.serverCommands.clear();
-        this.playerCommands.clear();
-        this.sound = null;
-        this.message = null;
-        this.placeholderTarget = null;
     }
 
 }

@@ -1,9 +1,20 @@
 package dev.rosewood.rosechat.message.tokenizer;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import dev.rosewood.rosechat.config.Settings;
 import dev.rosewood.rosechat.message.PermissionArea;
-import java.util.regex.Matcher;
+import dev.rosewood.rosechat.message.RosePlayer;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public abstract class Tokenizer {
+
+    private static final int PERMISSION_CACHE_DURATION = Settings.PERMISSION_CACHE_DURATION.get();
+    private static final Cache<PermissionCacheKey, Boolean> PERMISSION_CACHE = CacheBuilder.newBuilder()
+            .expireAfterWrite(PERMISSION_CACHE_DURATION, TimeUnit.SECONDS)
+            .build();
 
     private final String name;
 
@@ -12,13 +23,13 @@ public abstract class Tokenizer {
     }
 
     /**
-     * Tokenizes the input.
-     * This method is called extremely frequently and should break out as early as possible if the input is not valid.
+     * Tokenizes the input and outputs a list of matches.<br>
+     * The returned List must not have overlaps.
      *
      * @param params The {@link TokenizerParams} for this tokenization.
-     * @return A {@link TokenizerResult} or null if the input is invalid.
+     * @return A List of {@link TokenizerResult} or null (or an empty list) if the input is invalid.
      */
-    public abstract TokenizerResult tokenize(TokenizerParams params);
+    public abstract List<TokenizerResult> tokenize(TokenizerParams params);
 
     /**
      * @return The name of this tokenizer.
@@ -35,8 +46,10 @@ public abstract class Tokenizer {
      */
     public boolean hasTokenPermission(TokenizerParams params, String permission) {
         // If the message doesn't exist, sent from the console, or has a location of 'NONE', then the sender should have permission.
-        if (params == null || params.getSender() == null
-                || params.getLocation() == PermissionArea.NONE || (params.getSender().isConsole())
+        if (params == null
+                || params.getSender() == null
+                || params.getLocation() == PermissionArea.NONE
+                || params.getSender().isConsole()
                 || !params.containsPlayerInput())
             return true;
 
@@ -45,7 +58,7 @@ public abstract class Tokenizer {
 
         return params.getSender().getIgnoredPermissions().contains(fullPermission.replace("rosechat.", ""))
                 || params.getSender().getIgnoredPermissions().contains("*")
-                || checkAndLogPermission(params, fullPermission);
+                || checkPermission(params, fullPermission);
     }
 
     /**
@@ -58,8 +71,10 @@ public abstract class Tokenizer {
      */
     public boolean hasExtendedTokenPermission(TokenizerParams params, String permission, String extendedPermission) {
         // If the message doesn't exist, sent from the console, or has a location of 'NONE', then the sender should have permission.
-        if (params == null || params.getSender() == null
-                || params.getLocation() == PermissionArea.NONE || (params.getSender().isConsole())
+        if (params == null
+                || params.getSender() == null
+                || params.getLocation() == PermissionArea.NONE
+                || params.getSender().isConsole()
                 || !params.containsPlayerInput())
             return true;
 
@@ -69,27 +84,41 @@ public abstract class Tokenizer {
 
         return params.getSender().getIgnoredPermissions().contains(extendedPermission.replace("rosechat.", ""))
                 || params.getSender().getIgnoredPermissions().contains("*")
-                || checkAndLogPermission(params, extendedPermission);
+                || checkPermission(params, extendedPermission);
     }
 
-    private boolean checkAndLogPermission(TokenizerParams params, String permission) {
-        boolean hasPermission = params.getSender().hasPermission(permission);
-        if (!hasPermission)
-            params.getOutputs().getMissingPermissions().add(permission);
+    /**
+     * Checks if a sender has a permission and caches the result
+     *
+     * @param params The TokenizerParams
+     * @param permission The permission to check
+     * @return true if the player has the permission, false otherwise
+     */
+    public static boolean checkPermission(TokenizerParams params, String permission) {
+        Boolean hasPermission = params.getOutputs().getCheckedPermissions().get(permission);
+        if (hasPermission != null)
+            return hasPermission;
 
-        return hasPermission;
-    }
+        if (PERMISSION_CACHE_DURATION == 0) {
+            hasPermission = params.getSender().hasPermission(permission);
+            params.getOutputs().getCheckedPermissions().put(permission, hasPermission);
+            return hasPermission;
+        }
 
-    public String getCaptureGroup(Matcher matcher, String group) {
         try {
-            return matcher.group(group);
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            return null;
+            PermissionCacheKey cacheKey = new PermissionCacheKey(params.getSender(), permission);
+            boolean cachedPermission = PERMISSION_CACHE.get(cacheKey, () -> params.getSender().hasPermission(permission));
+            params.getOutputs().getCheckedPermissions().put(permission, cachedPermission);
+            return cachedPermission;
+        } catch (ExecutionException e) {
+            throw new IllegalStateException("Failed to check permission: " + permission);
         }
     }
 
     public Tokenizers.TokenizerBundle asBundle() {
         return new Tokenizers.TokenizerBundle(this.name, this);
     }
+
+    private record PermissionCacheKey(RosePlayer player, String permission) { }
 
 }

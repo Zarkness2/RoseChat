@@ -268,8 +268,10 @@ public class DiscordSRVProvider implements DiscordChatProvider {
 
     @Override
     public String getChannelFromName(String name) {
-        GuildChannel channel = this.discord.getJda().getTextChannelsByName(name, true).get(0);
-        return channel == null ? null : channel.getAsMention();
+        List<TextChannel> channels = this.discord.getJda().getTextChannelsByName(name, true);
+        if (!channels.isEmpty())
+            return channels.getFirst().getAsMention();
+        return null;
     }
 
     @Override
@@ -310,13 +312,14 @@ public class DiscordSRVProvider implements DiscordChatProvider {
     public List<UUID> getPlayersWithRole(String id) {
         Role role = this.discord.getMainGuild().getRoleById(id);
         if (role == null)
-            return null;
+            return List.of();
 
         List<UUID> players = new ArrayList<>();
         for (Member member : this.discord.getMainGuild().getMembers()) {
             if (member.getRoles().contains(role)) {
                 UUID uuid = this.discord.getAccountLinkManager().getUuid(member.getId());
-                if (uuid != null) players.add(uuid);
+                if (uuid != null)
+                    players.add(uuid);
             }
         }
 
@@ -326,7 +329,7 @@ public class DiscordSRVProvider implements DiscordChatProvider {
     @Override
     public String getCustomEmoji(String name) {
         List<Emote> emotes = this.discord.getMainGuild().getEmotesByName(name, true);
-        return (emotes == null || emotes.isEmpty()) ? ":" + name + ":" : emotes.get(0).getAsMention();
+        return emotes.isEmpty() ? ":" + name + ":" : emotes.get(0).getAsMention();
     }
 
     @Override
@@ -352,9 +355,6 @@ public class DiscordSRVProvider implements DiscordChatProvider {
             UUID uuid = this.discord.getAccountLinkManager().getLinkedAccounts().get(accountId);
             OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
 
-            if (player == null)
-                break;
-
             int matchLength = this.getMatchLength(input, player.getName());
             if (matchLength != -1) {
                 Member member = this.discord.getMainGuild().getMemberById(accountId);
@@ -371,7 +371,7 @@ public class DiscordSRVProvider implements DiscordChatProvider {
         for (GuildChannel channel : this.discord.getMainGuild().getChannels()) {
             int matchLength = this.getMatchLength(input, channel.getName());
             if (matchLength != -1)
-                return new DetectedMention(this.getChannelFromName(channel.getName()), channel.getAsMention(), matchLength);
+                return new DetectedMention(channel.getName(), channel.getAsMention(), matchLength);
         }
 
         return null;
@@ -384,7 +384,7 @@ public class DiscordSRVProvider implements DiscordChatProvider {
             int memberChar = Character.toUpperCase(memberName.codePointAt(j));
             if (inputChar == memberChar) {
                 matchLength++;
-            } else if (i > 0 && (Character.isSpaceChar(inputChar) || Pattern.matches(MessageUtils.PUNCTUATION_REGEX, String.valueOf(Character.toChars(inputChar))))) {
+            } else if (i > 0 && (Character.isSpaceChar(inputChar) || MessageUtils.PUNCTUATION_REGEX.matcher(String.valueOf(Character.toChars(inputChar))).matches())) {
                 return matchLength;
             } else {
                 return -1;
