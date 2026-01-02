@@ -8,6 +8,7 @@ import dev.rosewood.rosechat.message.tokenizer.decorator.FontDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.FormatDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.HoverDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.ShadowColorDecorator;
+import dev.rosewood.rosechat.message.tokenizer.decorator.SpriteDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.TokenDecorator;
 import net.kyori.adventure.text.Component;
 
@@ -76,6 +77,7 @@ public abstract class AdventureTokenDecorator<T extends TokenDecorator> implemen
             case FontDecorator fontDecorator -> new AdventureFontDecorator(fontDecorator);
             case FormatDecorator formatDecorator -> new AdventureFormatDecorator(formatDecorator);
             case HoverDecorator hoverDecorator -> new AdventureHoverDecorator(hoverDecorator);
+            case SpriteDecorator spriteDecorator -> new AdventureSpriteDecorator(spriteDecorator);
             default -> throw new IllegalArgumentException("Unhandled decorator type: " + decorator.getClass().getName());
         };
     }
