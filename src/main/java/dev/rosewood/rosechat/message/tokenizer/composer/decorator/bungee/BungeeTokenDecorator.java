@@ -6,6 +6,7 @@ import dev.rosewood.rosechat.message.tokenizer.decorator.ColorDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.DecoratorType;
 import dev.rosewood.rosechat.message.tokenizer.decorator.FontDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.FormatDecorator;
+import dev.rosewood.rosechat.message.tokenizer.decorator.HeadDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.HoverDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.ShadowColorDecorator;
 import dev.rosewood.rosechat.message.tokenizer.decorator.SpriteDecorator;
@@ -77,6 +78,7 @@ public abstract class BungeeTokenDecorator<T extends TokenDecorator> implements 
             case FormatDecorator formatDecorator -> new BungeeFormatDecorator(formatDecorator);
             case HoverDecorator hoverDecorator -> new BungeeHoverDecorator(hoverDecorator);
             case SpriteDecorator spriteDecorator -> new BungeeSpriteDecorator(spriteDecorator);
+            case HeadDecorator headDecorator -> new BungeeHeadDecorator(headDecorator);
             default -> throw new IllegalArgumentException("Unhandled decorator type: " + decorator.getClass().getName());
         };
     }
