@@ -38,7 +38,7 @@ public class MarkdownChatComposer implements ChatComposer<String> {
 
         for (Token child : token.getChildren()) {
             switch (child.getType()) {
-                case TEXT -> stringBuilder.append(child.getContent());
+                case CONTENT -> stringBuilder.append(child.getContent());
                 case DECORATOR -> stringBuilder.append(this.decoratorsToMarkdown(child.getDecorators(), activeFormats));
                 case GROUP -> {
                     Deque<FormatDecorator.FormatType> childFormats = child.shouldEncapsulate() ? new ArrayDeque<>(activeFormats) : activeFormats;

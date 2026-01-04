@@ -32,7 +32,7 @@ public class PlainChatComposer implements ChatComposer<String> {
 
         for (Token child : token.getChildren()) {
             switch (child.getType()) {
-                case TEXT -> stringBuilder.append(child.getContent());
+                case CONTENT -> stringBuilder.append(child.getContent());
                 case GROUP -> this.compose(child, stringBuilder);
             }
         }

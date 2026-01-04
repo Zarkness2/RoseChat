@@ -4,8 +4,7 @@ import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
-import dev.rosewood.rosechat.message.tokenizer.decorator.HeadDecorator;
-import dev.rosewood.rosechat.message.tokenizer.decorator.SpriteDecorator;
+import dev.rosewood.rosechat.message.tokenizer.content.HeadTokenContent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -23,43 +22,44 @@ public class HeadTokenizer extends Tokenizer {
     @Override
     public List<TokenizerResult> tokenize(TokenizerParams params) {
         String input = params.getInput();
-        if (!checkPermission(params, "rosechat.head"))
-            return null;
 
         List<TokenizerResult> results = new ArrayList<>();
         Matcher matcher = PATTERN.matcher(input);
         while (matcher.find()) {
-            HeadDecorator headDecorator = null;
+            if (!checkPermission(params, "rosechat.head"))
+                return null;
 
             String content = matcher.group(1);
             String outerLayerStr = matcher.group(2);
+
+            HeadTokenContent headContent;
             if (content == null) {
-                headDecorator = HeadDecorator.named(params.getSender().getRealName());
+                headContent = HeadTokenContent.named(params.getSender().getRealName());
             } else if (outerLayerStr == null) {
                 if (content.equalsIgnoreCase("true") || content.equalsIgnoreCase("false"))
-                    headDecorator = HeadDecorator.named(params.getSender().getRealName(), Boolean.parseBoolean(content));
+                    headContent = HeadTokenContent.named(params.getSender().getRealName(), Boolean.parseBoolean(content));
                 else
-                    headDecorator = this.create(content, true);
+                    headContent = this.create(content, true);
             } else {
                 boolean outerLayer = Boolean.parseBoolean(outerLayerStr);
-                headDecorator = this.create(content, outerLayer);
+                headContent = this.create(content, outerLayer);
             }
 
-            results.add(new TokenizerResult(Token.decorator(headDecorator), matcher.start(), matcher.group().length()));
+            results.add(new TokenizerResult(Token.content(headContent), matcher.start(), matcher.group().length()));
         }
 
         return results;
     }
 
-    private HeadDecorator create(String content, boolean outerLayer) {
+    private HeadTokenContent create(String content, boolean outerLayer) {
         if (content.contains("/")) {
-            return HeadDecorator.textured(content, outerLayer);
+            return HeadTokenContent.textured(content, outerLayer);
         } else {
             try {
                 UUID uuid = UUID.fromString(content);
-                return HeadDecorator.uuid(uuid, outerLayer);
+                return HeadTokenContent.uuid(uuid, outerLayer);
             } catch (IllegalArgumentException e) {
-                return HeadDecorator.named(content, outerLayer);
+                return HeadTokenContent.named(content, outerLayer);
             }
         }
     }

@@ -8,6 +8,9 @@ import dev.rosewood.rosechat.message.RoseMessage;
 import dev.rosewood.rosechat.message.RosePlayer;
 import dev.rosewood.rosechat.message.contents.MessageContents;
 import dev.rosewood.rosechat.message.tokenizer.composer.ChatComposer;
+import dev.rosewood.rosechat.message.tokenizer.content.HeadTokenContent;
+import dev.rosewood.rosechat.message.tokenizer.content.SpriteTokenContent;
+import dev.rosewood.rosechat.message.tokenizer.content.TextTokenContent;
 import dev.rosewood.rosechat.message.tokenizer.decorator.DecoratorType;
 import dev.rosewood.rosechat.message.tokenizer.decorator.TokenDecorator;
 import dev.rosewood.rosechat.message.tokenizer.placeholder.RoseChatPlaceholderTokenizer;
@@ -67,7 +70,7 @@ public class MessageTokenizer {
                     tokens.stream().map(t -> t.getType().name() + ":" + t.getContent()).collect(Collectors.joining(" -> ")));
         }
 
-        List<Token> children = this.tokenizeContent(token.getContent(), token, depth);
+        List<Token> children = this.tokenizeContent(((TextTokenContent) token.getContent()).text(), token, depth);
         token.getChildren().addAll(children);
         token.getChildren().forEach(x -> x.parent = token); // Make sure all children have their parent assigned
 
@@ -142,7 +145,7 @@ public class MessageTokenizer {
             if (DEBUG_MANAGER.isEnabled() && tokenizer != Tokenizers.TEXT) {
                 DEBUG_MANAGER.addMessage(() ->
                         "[" + tokenizer.getName() + "] Tokenized: " + content + " -> " +
-                                children.stream().filter(x -> x.getType() != TokenType.DECORATOR).map(Token::getContent).collect(Collectors.joining()) + " in " +
+                                children.stream().filter(x -> x.getType() != TokenType.DECORATOR).map(Token::getContent).map(Object::toString).collect(Collectors.joining()) + " in " +
                                 NUMBER_FORMAT.format(endTimeMs) + "ms");
             }
 
@@ -153,7 +156,7 @@ public class MessageTokenizer {
     }
 
     private void tokenizeContentDecorators(Token token, int depth) {
-        if (token.getType() == TokenType.TEXT)
+        if (token.getType() == TokenType.CONTENT)
             return;
 
         for (TokenDecorator decorator : token.getDecorators()) {
@@ -255,9 +258,14 @@ public class MessageTokenizer {
         int length = 0;
         for (Token child : token.getChildren()) {
             switch (child.getType()) {
-                case TEXT -> {
-                    if (counting.get())
-                        length += child.getContent().replaceAll("\\s", "").length();
+                case CONTENT -> {
+                    if (counting.get()) {
+                        switch (child.getContent()) {
+                            case TextTokenContent(String text) -> length += text.replaceAll("\\s", "").length();
+                            case HeadTokenContent ignored -> length++;
+                            case SpriteTokenContent ignored -> length++;
+                        }
+                    }
                 }
                 case DECORATOR -> {
                     if (counting.get() && child.getDecorators().stream().anyMatch(decorator::isOverwrittenBy)) {
