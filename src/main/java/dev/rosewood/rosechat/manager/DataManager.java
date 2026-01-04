@@ -137,7 +137,7 @@ public class DataManager extends AbstractDataManager {
                 statement.setLong(11, playerData.getMuteExpirationTime());
                 statement.setString(12, playerData.getNickname());
                 statement.setBoolean(13, playerData.isCurrentChannelGroupChannel());
-                statement.setString(14, playerData.getStrippedDisplayName().toLowerCase());
+                statement.setString(14, playerData.getStrippedDisplayName());
                 statement.executeUpdate();
             }
         });

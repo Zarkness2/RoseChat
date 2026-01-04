@@ -42,7 +42,7 @@ public class FilterTokenizer extends Tokenizer {
 
     @Override
     public List<TokenizerResult> tokenize(TokenizerParams params) {
-        if (params.getLocation() != PermissionArea.CHANNEL && !checkPermission(params, "rosechat.filters." + params.getLocationPermission()))
+        if (params.getLocation() != PermissionArea.CHANNEL && !checkPermission(params, "rosechat.filters." + params.getLocationPermission(), false))
             return null;
 
         List<TokenizerResult> results = new ArrayList<>();
