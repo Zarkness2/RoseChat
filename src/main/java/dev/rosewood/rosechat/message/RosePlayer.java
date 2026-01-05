@@ -39,6 +39,7 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 public class RosePlayer {
 
     private final RoseChatAPI api;
+    private final String consoleName;
     private List<String> ignoredPermissions;
     private boolean isDiscordProxy;
     private OfflinePlayer offlinePlayer;
@@ -48,6 +49,7 @@ public class RosePlayer {
     private RosePlayer() {
         this.api = RoseChatAPI.getInstance();
         this.ignoredPermissions = new ArrayList<>();
+        this.consoleName = api.getLocaleManager().getMessage("console-sender-name");
     }
 
     public RosePlayer(Player player) {
@@ -70,7 +72,7 @@ public class RosePlayer {
             this.name = player.getName();
             this.group = this.api.getVault() == null ? "default" : this.api.getVault().getPrimaryGroup(player);
         } else {
-            this.name = "Console";
+            this.name = this.consoleName;
             this.group = "default";
         }
     }

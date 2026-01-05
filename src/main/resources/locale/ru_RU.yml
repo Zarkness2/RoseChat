@@ -29,7 +29,6 @@ blocked-message: "&e%player% &cпытался сказать &e%message%&c, но
 # Удерживаемый предмет
 no-held-item: "&cВы не можете использовать тег предмета, если не держите предмет!"
 
-
 # Сообщение базовой команды
 base-command-color: "&e"
 base-command-help: "&eИспользуйте &b/%cmd% help &eдля получения информации о команде."
@@ -83,6 +82,7 @@ command-ignorelist-separator: "&7, &e"
 
 # Команда сообщения
 command-message-description: "Отправить личное сообщение игроку"
+console-sender-name: "&cконсоль"
 
 # Команда заглушения
 command-mute-description: "Заглушить игрока"
