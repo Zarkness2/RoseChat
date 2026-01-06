@@ -102,8 +102,6 @@ public class ChatColorCommand extends RoseChatCommand {
                 player.sendLocaleMessage("no-permission");
                 return;
             }
-
-            color = filter.replacement();
         }
 
         targetData.setColor(color);
