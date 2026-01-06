@@ -116,6 +116,12 @@ public final class Settings implements SettingHolder {
                         "For example, using 'rosechat.red.<location>' to use &c.",
                         "More information can be found on the wiki: https://github.com/Rosewood-Development/RoseChat/wiki/Commands-%26-Permissions/",
                         "A full list of colors can be found here: https://hub.spigotmc.org/javadocs/spigot/org/bukkit/ChatColor.html");
+    public static final RoseSetting<Boolean> USE_PER_CHANNEL_CHATCOLOR_PERMISSIONS = create(CHAT_SETTINGS, "use-per-channel-chatcolor-permissions", BOOLEAN, false,
+            "Should colors applied with '/chatcolor' require a permission to be used in specific channels?",
+                        "For example, setting '/chatcolor' to '&c' will require the permission 'rosechat.color.channel.<channel>' to be used, ",
+                        "or 'rosechat.red.channel.<channel>' if 'use-per-color-permissions' is enabled.",
+                        "If using a filter as a chatcolor, with this enabled it will also require permission for that filter to be used in the channel.",
+                        "If false, the player's chatcolor will be applied to the message without requiring the channel permission.");
     public static final RoseSetting<Integer> WORLDGUARD_CHECK_INTERVAL = create(CHAT_SETTINGS, "worldguard-check-interval", INTEGER, 20,
             "How often, in ticks, should the plugin check if a player is in a region associated with a WorldGuard channel?",
                         "Requires WorldGuard");

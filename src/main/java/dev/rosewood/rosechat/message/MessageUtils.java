@@ -18,6 +18,7 @@ import dev.rosewood.rosegarden.hook.PlaceholderAPIHook;
 import dev.rosewood.rosegarden.utils.HexUtils;
 import dev.rosewood.rosegarden.utils.StringPlaceholders;
 import java.text.Normalizer;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -473,9 +474,11 @@ public class MessageUtils {
         RoseMessage message = RoseMessage.forLocation(sender, area);
         message.setPlayerInput(str);
         MessageContents components = MessageTokenizer.tokenize(message, sender, RoseChatPlaceholderTokenizer.MESSAGE_PLACEHOLDER, MessageDirection.PLAYER_TO_SERVER,
+                Tokenizers.ROSECHAT_PLACEHOLDER.asBundle(),
                 Tokenizers.FILTER.asBundle(),
                 Tokenizers.COLORS_BUNDLE);
-        return components.outputs().getMissingPermissions().isEmpty();
+        Set<String> missingPermissions = components.outputs().getMissingPermissions();
+        return missingPermissions.isEmpty();
 
 //        Matcher colorMatcher = VALID_LEGACY_REGEX.matcher(str);
 //        Matcher hexMatcher = HEX_REGEX.matcher(str);

@@ -45,7 +45,7 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
         StringBuilder contentBuilder = new StringBuilder();
 
         for (Token child : token.getChildren()) {
-            if ((child.getType() != TokenType.CONTENT || contextDecorators.blocksTextStitching()) && !contentBuilder.isEmpty())
+            if ((child.getType() != TokenType.CONTENT || contextDecorators.blocksTextStitching() || !(child.getContent() instanceof TextTokenContent)) && !contentBuilder.isEmpty())
                 this.applyAndDecorate(componentBuilder, contentBuilder, child, contextDecorators);
 
             switch (child.getType()) {
