@@ -26,7 +26,7 @@ public class SpriteTokenizer extends Tokenizer {
         List<TokenizerResult> results = new ArrayList<>();
         Matcher matcher = PATTERN.matcher(input);
         while (matcher.find()) {
-            if (!checkPermission(params, "rosechat.sprite"))
+            if (!this.hasTokenPermission(params, "rosechat.sprite"))
                 return null;
 
             String atlas = matcher.group(1) == null ? DEFAULT_ATLAS : matcher.group(1);

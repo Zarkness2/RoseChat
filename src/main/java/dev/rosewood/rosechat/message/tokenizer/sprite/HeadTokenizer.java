@@ -26,7 +26,7 @@ public class HeadTokenizer extends Tokenizer {
         List<TokenizerResult> results = new ArrayList<>();
         Matcher matcher = PATTERN.matcher(input);
         while (matcher.find()) {
-            if (!checkPermission(params, "rosechat.head"))
+            if (!this.hasTokenPermission(params, "rosechat.head"))
                 return null;
 
             String content = matcher.group(1);
