@@ -150,10 +150,14 @@ public final class Settings implements SettingHolder {
             "Can players use RoseChat features on signs?",
                         "Players will require the sign permissions. For example, 'rosechat.filters.sign', to use filters on signs.",
                         "Players will also need the individual permissions, such as 'rosechat.filters.heart'.");
+    public static final RoseSetting<Boolean> COLOR_HEADS_AND_SPRITES = create(CHAT_SETTINGS, "color-heads-and-sprites", BOOLEAN, false,
+            "Will heads and sprites in chat from <head> and <sprite> be colored?",
+                        "If false, they will always be displayed using no chat coloring",
+                        "Only effective on game versions that support heads and sprites in chat.");
     public static final RoseSetting<Integer> PERMISSION_CACHE_DURATION = create(CHAT_SETTINGS, "permission-cache-duration", INTEGER, 3,
             "The number of seconds chat permissions will be cached for after sending a message.",
-            "This helps prevent permissions from being checked too frequently.",
-            "Requires a server restart to change, set to 0 to disable.");
+                        "This helps prevent permissions from being checked too frequently.",
+                        "Requires a server restart to change, set to 0 to disable.");
 
     public static final RoseSetting<ConfigurationSection> DISCORD_SETTINGS = create("discord-settings", "Discord Settings", "Requires DiscordSRV");
     public static final RoseSetting<Boolean> USE_DISCORD = create(DISCORD_SETTINGS, "use-discord", BOOLEAN, true,

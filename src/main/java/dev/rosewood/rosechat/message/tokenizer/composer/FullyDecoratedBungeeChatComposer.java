@@ -1,5 +1,6 @@
 package dev.rosewood.rosechat.message.tokenizer.composer;
 
+import dev.rosewood.rosechat.config.Settings;
 import dev.rosewood.rosechat.message.MessageUtils;
 import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.TokenType;
@@ -97,12 +98,12 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
                 }
 
                 componentBuilder.append(new ObjectComponent(playerObject), ComponentBuilder.FormatRetention.NONE);
-                contextDecorators.apply(componentBuilder.getCurrentComponent(), parent);
+                contextDecorators.apply(componentBuilder.getCurrentComponent(), parent, !Settings.COLOR_HEADS_AND_SPRITES.get());
             }
             case SpriteTokenContent(String atlas, String sprite) -> {
                 SpriteObject spriteObject = new SpriteObject(atlas, sprite);
                 componentBuilder.append(new ObjectComponent(spriteObject), ComponentBuilder.FormatRetention.NONE);
-                contextDecorators.apply(componentBuilder.getCurrentComponent(), parent);
+                contextDecorators.apply(componentBuilder.getCurrentComponent(), parent, !Settings.COLOR_HEADS_AND_SPRITES.get());
             }
         }
     }

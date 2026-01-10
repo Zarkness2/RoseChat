@@ -2,6 +2,7 @@ package dev.rosewood.rosechat.message.tokenizer.composer.decorator.adventure;
 
 import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.composer.decorator.TokenDecorators;
+import dev.rosewood.rosechat.message.tokenizer.decorator.DecoratorType;
 import net.kyori.adventure.text.Component;
 
 public class AdventureTokenDecorators extends TokenDecorators<AdventureTokenDecorator<?>> {
@@ -18,8 +19,13 @@ public class AdventureTokenDecorators extends TokenDecorators<AdventureTokenDeco
     }
 
     public Component apply(Component component, Token parent) {
+        return this.apply(component, parent, false);
+    }
+
+    public Component apply(Component component, Token parent, boolean stripStyling) {
         for (AdventureTokenDecorator<?> decorator : this.decorators)
-            component = decorator.apply(component, parent);
+            if (!stripStyling || decorator.getType() != DecoratorType.STYLING)
+                component = decorator.apply(component, parent);
         return component;
     }
 
