@@ -59,7 +59,7 @@ public class PAPIPlaceholderTokenizer extends Tokenizer {
 
             // If we haven't changed, don't allow tokenizing this text anymore
             if (Objects.equals(content, placeholder)) {
-                results.add(new TokenizerResult(Token.text(placeholder), start, end));
+                results.add(new TokenizerResult(Token.text(placeholder), start, placeholder.length()));
                 continue;
             }
 
