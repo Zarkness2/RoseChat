@@ -4,17 +4,13 @@ import dev.rosewood.rosechat.config.Settings;
 import dev.rosewood.rosechat.message.MessageUtils;
 import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.TokenType;
-import dev.rosewood.rosechat.message.tokenizer.composer.decorator.adventure.AdventureTokenDecorators;
 import dev.rosewood.rosechat.message.tokenizer.composer.decorator.bungee.BungeeTokenDecorators;
 import dev.rosewood.rosechat.message.tokenizer.content.HeadTokenContent;
 import dev.rosewood.rosechat.message.tokenizer.content.SpriteTokenContent;
 import dev.rosewood.rosechat.message.tokenizer.content.TextTokenContent;
 import dev.rosewood.rosechat.message.tokenizer.content.TokenContent;
 import java.util.UUID;
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.object.ObjectContents;
-import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -86,23 +82,15 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
         switch (content) {
             case TextTokenContent(String s) -> contentBuilder.append(s);
             case HeadTokenContent(String name, UUID uuid, String texture, boolean outerLayer) -> {
-                PlayerObject playerObject;
-                if (name != null) {
-                    playerObject = new PlayerObject(new Profile(name), outerLayer);
-                } else if (uuid != null) {
-                    playerObject = new PlayerObject(new Profile(uuid), outerLayer);
-                } else if (texture != null) {
-                    playerObject = new PlayerObject(new Profile(new Property[]{ new Property("textures", texture)}), outerLayer);
-                } else {
+                BaseComponent headComponent = ChatObjectHelper.createHeadComponent(name, uuid, texture, outerLayer);
+                if (headComponent == null)
                     return;
-                }
-
-                componentBuilder.append(new ObjectComponent(playerObject), ComponentBuilder.FormatRetention.NONE);
+                componentBuilder.append(headComponent, ComponentBuilder.FormatRetention.NONE);
                 contextDecorators.apply(componentBuilder.getCurrentComponent(), parent, !Settings.COLOR_HEADS_AND_SPRITES.get());
             }
             case SpriteTokenContent(String atlas, String sprite) -> {
-                SpriteObject spriteObject = new SpriteObject(atlas, sprite);
-                componentBuilder.append(new ObjectComponent(spriteObject), ComponentBuilder.FormatRetention.NONE);
+                BaseComponent spriteComponent = ChatObjectHelper.createSpriteComponent(atlas, sprite);
+                componentBuilder.append(spriteComponent, ComponentBuilder.FormatRetention.NONE);
                 contextDecorators.apply(componentBuilder.getCurrentComponent(), parent, !Settings.COLOR_HEADS_AND_SPRITES.get());
             }
         }
@@ -154,6 +142,33 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
         @Override
         public BaseComponent[] compose(Component component) {
             return BungeeComponentSerializer.get().serialize(component);
+        }
+
+    }
+
+    /**
+     * I'm not exactly sure why this is required but simply loading this class on Paper 1.21.11 causes it to give a NoClassDefFoundError for ChatObject even though it isn't used
+     */
+    private static class ChatObjectHelper {
+
+        public static BaseComponent createHeadComponent(String name, UUID uuid, String texture, boolean outerLayer) {
+            PlayerObject playerObject;
+            if (name != null) {
+                playerObject = new PlayerObject(new Profile(name), outerLayer);
+            } else if (uuid != null) {
+                playerObject = new PlayerObject(new Profile(uuid), outerLayer);
+            } else if (texture != null) {
+                playerObject = new PlayerObject(new Profile(new Property[]{ new Property("textures", texture)}), outerLayer);
+            } else {
+                return null;
+            }
+
+            return new ObjectComponent(playerObject);
+        }
+
+        public static BaseComponent createSpriteComponent(String atlas, String sprite) {
+            SpriteObject spriteObject = new SpriteObject(atlas, sprite);
+            return new ObjectComponent(spriteObject);
         }
 
     }
