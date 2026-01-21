@@ -28,102 +28,17 @@ public class FullyDecoratedAdventureChatComposer implements ChatComposer<Compone
 
     @Override
     public Component compose(Token token) {
-        return this.compose(token, this.createDecorators());
-    }
-
-    protected Component compose(Token token, AdventureTokenDecorators contextDecorators) {
-        if (token.getType() != TokenType.GROUP)
-            throw new IllegalStateException("Cannot convert a token that is not of type GROUP");
-
-        Component componentBuilder = Component.empty();
-        StringBuilder contentBuilder = new StringBuilder();
-
-        for (Token child : token.getChildren()) {
-            if ((child.getType() != TokenType.CONTENT || contextDecorators.blocksTextStitching() || !(child.getContent() instanceof TextTokenContent)) && !contentBuilder.isEmpty())
-                componentBuilder = this.applyAndDecorate(componentBuilder, contentBuilder, child, contextDecorators);
-
-            switch (child.getType()) {
-                case CONTENT -> componentBuilder = this.appendContent(componentBuilder, contentBuilder, contextDecorators, child, child.getContent());
-                case DECORATOR -> contextDecorators.add(child.getDecorators());
-                case GROUP -> {
-                    AdventureTokenDecorators childDecorators = child.shouldEncapsulate() ? this.createDecorators(contextDecorators) : contextDecorators;
-                    componentBuilder = componentBuilder.append(this.compose(child, childDecorators));
-                }
-            }
-        }
-
-        if (!contentBuilder.isEmpty())
-            componentBuilder = this.applyAndDecorate(componentBuilder, contentBuilder, token, contextDecorators);
-
-        if (token.isPlain())
-            return componentBuilder;
-
-        Component wrapperComponent = Component.textOfChildren(componentBuilder);
-        AdventureTokenDecorators wrapperDecorators = this.createDecorators();
-        wrapperDecorators.add(token.getDecorators());
-        wrapperComponent = wrapperDecorators.apply(wrapperComponent, token);
-        return wrapperComponent;
-    }
-
-    protected AdventureTokenDecorators createDecorators() {
-        return new AdventureTokenDecorators();
-    }
-
-    protected AdventureTokenDecorators createDecorators(AdventureTokenDecorators contextDecorators) {
-        return new AdventureTokenDecorators(contextDecorators);
-    }
-
-    private Component appendContent(Component componentBuilder, StringBuilder contentBuilder, AdventureTokenDecorators contextDecorators, Token parent,TokenContent content) {
-        return switch (content) {
-            case TextTokenContent(String s) -> {
-                contentBuilder.append(s);
-                yield componentBuilder;
-            }
-            case HeadTokenContent(String name, UUID uuid, String texture, boolean outerLayer) -> {
-                PlayerHeadObjectContents.Builder builder = ObjectContents.playerHead();
-                builder.hat(outerLayer);
-
-                if (name != null) {
-                    builder.name(name);
-                } else if (uuid != null) {
-                    builder.id(uuid);
-                } else if (texture != null) {
-                    builder.texture(Key.key(texture));
-                } else {
-                    yield componentBuilder;
-                }
-
-                Component headComponent = Component.object(builder.build());
-                yield componentBuilder.append(contextDecorators.apply(headComponent, parent, !Settings.COLOR_HEADS_AND_SPRITES.get()));
-            }
-            case SpriteTokenContent(String atlas, String sprite) -> {
-                Component spriteComponent = Component.object(ObjectContents.sprite(Key.key(atlas), Key.key(sprite)));
-                yield componentBuilder.append(contextDecorators.apply(spriteComponent, parent, !Settings.COLOR_HEADS_AND_SPRITES.get()));
-            }
-        };
-    }
-
-    private Component applyAndDecorate(Component component, StringBuilder contentBuilder, Token token, AdventureTokenDecorators contextDecorators) {
-        String content = contentBuilder.toString();
-        contentBuilder.setLength(0);
-
-        if (contextDecorators.blocksTextStitching()) {
-            for (char c : content.toCharArray())
-                component = component.append(contextDecorators.apply(Component.text(c), token));
-            return component;
-        } else {
-            return component.append(contextDecorators.apply(Component.text(content), token));
-        }
+        return this.composeAdventure().compose(token);
     }
 
     @Override
     public Component composeLegacy(String text) {
-        return LegacyComponentSerializer.legacySection().deserialize(text);
+        return this.composeAdventure().composeLegacy(text);
     }
 
     @Override
     public Component composeJson(String json) {
-        return GsonComponentSerializer.gson().deserialize(json);
+        return this.composeAdventure().composeJson(json);
     }
 
     @Override
@@ -136,17 +51,117 @@ public class FullyDecoratedAdventureChatComposer implements ChatComposer<Compone
         return Adventure.INSTANCE;
     }
 
-    public static final class Adventure implements ChatComposer.Adventure<Component> {
+    public static class Adventure implements ChatComposer.Adventure<Component> {
 
         private static final Adventure INSTANCE = new Adventure();
 
-        private Adventure() {
+        Adventure() {
 
         }
 
         @Override
         public Component compose(Component component) {
             return component;
+        }
+
+        @Override
+        public Component compose(Token token) {
+            return this.compose(token, this.createDecorators());
+        }
+
+        @Override
+        public Component composeLegacy(String text) {
+            return LegacyComponentSerializer.legacySection().deserialize(text);
+        }
+
+        @Override
+        public Component composeJson(String json) {
+            return GsonComponentSerializer.gson().deserialize(json);
+        }
+
+        protected AdventureTokenDecorators createDecorators() {
+            return new AdventureTokenDecorators();
+        }
+
+        private Component compose(Token token, AdventureTokenDecorators contextDecorators) {
+            if (token.getType() != TokenType.GROUP)
+                throw new IllegalStateException("Cannot convert a token that is not of type GROUP");
+
+            Component componentBuilder = Component.empty();
+            StringBuilder contentBuilder = new StringBuilder();
+
+            for (Token child : token.getChildren()) {
+                if ((child.getType() != TokenType.CONTENT || contextDecorators.blocksTextStitching() || !(child.getContent() instanceof TextTokenContent)) && !contentBuilder.isEmpty())
+                    componentBuilder = this.applyAndDecorate(componentBuilder, contentBuilder, child, contextDecorators);
+
+                switch (child.getType()) {
+                    case CONTENT -> componentBuilder = this.appendContent(componentBuilder, contentBuilder, contextDecorators, child, child.getContent());
+                    case DECORATOR -> contextDecorators.add(child.getDecorators());
+                    case GROUP -> {
+                        AdventureTokenDecorators childDecorators = child.shouldEncapsulate() ? this.createDecorators(contextDecorators) : contextDecorators;
+                        componentBuilder = componentBuilder.append(this.compose(child, childDecorators));
+                    }
+                }
+            }
+
+            if (!contentBuilder.isEmpty())
+                componentBuilder = this.applyAndDecorate(componentBuilder, contentBuilder, token, contextDecorators);
+
+            if (token.isPlain())
+                return componentBuilder;
+
+            Component wrapperComponent = Component.textOfChildren(componentBuilder);
+            AdventureTokenDecorators wrapperDecorators = this.createDecorators();
+            wrapperDecorators.add(token.getDecorators());
+            wrapperComponent = wrapperDecorators.apply(wrapperComponent, token);
+            return wrapperComponent;
+        }
+
+        protected AdventureTokenDecorators createDecorators(AdventureTokenDecorators contextDecorators) {
+            return new AdventureTokenDecorators(contextDecorators);
+        }
+
+        private Component appendContent(Component componentBuilder, StringBuilder contentBuilder, AdventureTokenDecorators contextDecorators, Token parent,TokenContent content) {
+            return switch (content) {
+                case TextTokenContent(String s) -> {
+                    contentBuilder.append(s);
+                    yield componentBuilder;
+                }
+                case HeadTokenContent(String name, UUID uuid, String texture, boolean outerLayer) -> {
+                    PlayerHeadObjectContents.Builder builder = ObjectContents.playerHead();
+                    builder.hat(outerLayer);
+
+                    if (name != null) {
+                        builder.name(name);
+                    } else if (uuid != null) {
+                        builder.id(uuid);
+                    } else if (texture != null) {
+                        builder.texture(Key.key(texture));
+                    } else {
+                        yield componentBuilder;
+                    }
+
+                    Component headComponent = Component.object(builder.build());
+                    yield componentBuilder.append(contextDecorators.apply(headComponent, parent, !Settings.COLOR_HEADS_AND_SPRITES.get()));
+                }
+                case SpriteTokenContent(String atlas, String sprite) -> {
+                    Component spriteComponent = Component.object(ObjectContents.sprite(Key.key(atlas), Key.key(sprite)));
+                    yield componentBuilder.append(contextDecorators.apply(spriteComponent, parent, !Settings.COLOR_HEADS_AND_SPRITES.get()));
+                }
+            };
+        }
+
+        private Component applyAndDecorate(Component component, StringBuilder contentBuilder, Token token, AdventureTokenDecorators contextDecorators) {
+            String content = contentBuilder.toString();
+            contentBuilder.setLength(0);
+
+            if (contextDecorators.blocksTextStitching()) {
+                for (char c : content.toCharArray())
+                    component = component.append(contextDecorators.apply(Component.text(c), token));
+                return component;
+            } else {
+                return component.append(contextDecorators.apply(Component.text(content), token));
+            }
         }
 
     }

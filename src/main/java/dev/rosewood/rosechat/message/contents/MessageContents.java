@@ -125,6 +125,28 @@ public abstract class MessageContents {
             return MessageContents.adventure().fromAdventure(component, MessageContents.this.outputs);
         }
 
+        public void sendMessage(CommandSender receiver) {
+            receiver.sendMessage(MessageContents.this.build(ChatComposer.adventure().decorated()));
+        }
+
+        public void setDisplayName(Player player) {
+            player.displayName(MessageContents.this.build(ChatComposer.adventure().decorated()));
+        }
+
+        public void setSignText(Sign sign, int lineIndex, String hexColor) {
+            Component component = Component.textOfChildren(MessageContents.this.build(ChatComposer.adventure().decorated()));
+            if (hexColor != null)
+                component.colorIfAbsent(TextColor.fromHexString(hexColor));
+            sign.line(lineIndex, component);
+        }
+
+        public void setSignText(Sign sign, SignSide side, int lineIndex, String hexColor) {
+            Component component = Component.textOfChildren(MessageContents.this.build(ChatComposer.adventure().decorated()));
+            if (hexColor != null)
+                component.colorIfAbsent(TextColor.fromHexString(hexColor));
+            side.line(lineIndex, component);
+        }
+
     }
 
     // endregion
@@ -133,15 +155,15 @@ public abstract class MessageContents {
 
     public void sendMessage(CommandSender receiver) {
         if (NMSUtil.isPaper()) {
-            receiver.sendMessage(this.build(ChatComposer.adventure().decorated()));
+            this.withAdventure().sendMessage(receiver);
         } else {
-            receiver.sendMessage(this.build(ChatComposer.decorated()));
+            receiver.spigot().sendMessage(this.build(ChatComposer.decorated()));
         }
     }
 
     public void setDisplayName(Player player) {
         if (NMSUtil.isPaper()) {
-            player.displayName(this.build(ChatComposer.adventure().decorated()));
+            this.withAdventure().setDisplayName(player);
         } else {
             player.setDisplayName(this.build(ChatComposer.legacy()));
         }
@@ -154,10 +176,7 @@ public abstract class MessageContents {
                 (int) (color.getGreen() / (sign.getLightLevel() * 0.1)), (int) (color.getBlue() / (sign.getLightLevel() * 0.1))) : null;
 
         if (NMSUtil.isPaper()) {
-            Component component = Component.textOfChildren(this.build(ChatComposer.adventure().decorated()));
-            if (hexColor != null)
-                component.colorIfAbsent(TextColor.fromHexString(hexColor));
-            sign.line(lineIndex, component);
+            this.withAdventure().setSignText(sign, lineIndex, hexColor);
         } else {
             if (color != null) {
                 ChatColor chatColor = ChatColor.of(hexColor);
@@ -188,10 +207,7 @@ public abstract class MessageContents {
                     (int) (color.getGreen() / (sign.getLightLevel() * 0.1)), (int) (color.getBlue() / (sign.getLightLevel() * 0.1))) : null;
 
             if (NMSUtil.isPaper()) {
-                Component component = Component.textOfChildren(MessageContents.this.build(ChatComposer.adventure().decorated()));
-                if (hexColor != null)
-                    component.colorIfAbsent(TextColor.fromHexString(hexColor));
-                side.line(lineIndex, component);
+                MessageContents.this.withAdventure().setSignText(sign, side, lineIndex, hexColor);
             } else {
                 if (color != null) {
                     ChatColor chatColor = ChatColor.of(hexColor);
@@ -272,7 +288,6 @@ public abstract class MessageContents {
         public MessageContents fromAdventure(Component component, MessageOutputs outputs) {
             return new AdventureMessageContents(component, outputs);
         }
-
     }
 
     // endregion

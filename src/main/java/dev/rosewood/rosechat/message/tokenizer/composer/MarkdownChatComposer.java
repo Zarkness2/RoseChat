@@ -143,6 +143,21 @@ public class MarkdownChatComposer implements ChatComposer<String> {
             throw new UnsupportedOperationException("Not implemented");
         }
 
+        @Override
+        public String compose(Token token) {
+            return "";
+        }
+
+        @Override
+        public String composeLegacy(String text) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public String composeJson(String json) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
     }
 
 }

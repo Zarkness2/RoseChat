@@ -1,5 +1,6 @@
 package dev.rosewood.rosechat.message.tokenizer.composer;
 
+import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.composer.decorator.adventure.AdventureTokenDecorators;
 import dev.rosewood.rosechat.message.tokenizer.decorator.DecoratorType;
 import dev.rosewood.rosechat.message.tokenizer.decorator.TokenDecorator;
@@ -13,16 +14,6 @@ public class StylesOnlyAdventureChatComposer extends FullyDecoratedAdventureChat
 
     private StylesOnlyAdventureChatComposer() {
 
-    }
-
-    @Override
-    protected AdventureTokenDecorators createDecorators() {
-        return new StyledTokenDecorators();
-    }
-
-    @Override
-    protected AdventureTokenDecorators createDecorators(AdventureTokenDecorators contextDecorators) {
-        return new StyledTokenDecorators(contextDecorators);
     }
 
     @Override
@@ -49,21 +40,23 @@ public class StylesOnlyAdventureChatComposer extends FullyDecoratedAdventureChat
         return Adventure.INSTANCE;
     }
 
-    public static final class Adventure implements ChatComposer.Adventure<Component> {
+    public static final class Adventure extends FullyDecoratedAdventureChatComposer.Adventure {
 
         private static final Adventure INSTANCE = new Adventure();
 
         private Adventure() {
+            super();
 
         }
 
-        /**
-         * Not implemented.
-         * @throws UnsupportedOperationException always
-         */
         @Override
-        public Component compose(Component component) {
-            throw new UnsupportedOperationException("Not implemented");
+        protected AdventureTokenDecorators createDecorators() {
+            return new StyledTokenDecorators();
+        }
+
+        @Override
+        protected AdventureTokenDecorators createDecorators(AdventureTokenDecorators contextDecorators) {
+            return new StyledTokenDecorators(contextDecorators);
         }
 
     }

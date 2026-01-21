@@ -20,8 +20,7 @@ public class JsonComposer implements ChatComposer<String> {
     @Override
     public String compose(Token token) {
         if (NMSUtil.isPaper()) {
-            Component component = ChatComposer.adventure().decorated().compose(token);
-            return GsonComponentSerializer.gson().serialize(component);
+            return this.composeAdventure().compose(token);
         } else {
             BaseComponent[] components = ChatComposer.decorated().compose(token);
             return MessageUtils.bungeeToJson(components);
@@ -31,8 +30,7 @@ public class JsonComposer implements ChatComposer<String> {
     @Override
     public String composeLegacy(String text) {
         if (NMSUtil.isPaper()) {
-            Component component = LegacyComponentSerializer.legacySection().deserialize(text);
-            return GsonComponentSerializer.gson().serialize(component);
+            return this.composeAdventure().composeLegacy(text);
         } else {
             BaseComponent[] components = TextComponent.fromLegacyText(text);
             return MessageUtils.bungeeToJson(components);
@@ -65,6 +63,23 @@ public class JsonComposer implements ChatComposer<String> {
         @Override
         public String compose(Component component) {
             return GsonComponentSerializer.gson().serialize(component);
+        }
+
+        @Override
+        public String compose(Token token) {
+            Component component = ChatComposer.adventure().decorated().compose(token);
+            return GsonComponentSerializer.gson().serialize(component);
+        }
+
+        @Override
+        public String composeLegacy(String text) {
+            Component component = LegacyComponentSerializer.legacySection().deserialize(text);
+            return GsonComponentSerializer.gson().serialize(component);
+        }
+
+        @Override
+        public String composeJson(String json) {
+            return json;
         }
 
     }

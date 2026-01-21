@@ -1,5 +1,6 @@
 package dev.rosewood.rosechat.message.tokenizer.composer;
 
+import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.composer.decorator.bungee.BungeeTokenDecorators;
 import dev.rosewood.rosechat.message.tokenizer.decorator.DecoratorType;
 import dev.rosewood.rosechat.message.tokenizer.decorator.TokenDecorator;
@@ -64,6 +65,21 @@ public class StylesOnlyBungeeChatComposer extends FullyDecoratedBungeeChatCompos
         @Override
         public BaseComponent[] compose(Component component) {
             throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public BaseComponent[] compose(Token token) {
+            return new BaseComponent[0];
+        }
+
+        @Override
+        public BaseComponent[] composeLegacy(String text) {
+            return new BaseComponent[0];
+        }
+
+        @Override
+        public BaseComponent[] composeJson(String json) {
+            return new BaseComponent[0];
         }
 
     }

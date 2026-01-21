@@ -144,6 +144,21 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
             return BungeeComponentSerializer.get().serialize(component);
         }
 
+        @Override
+        public BaseComponent[] compose(Token token) {
+            return new BaseComponent[0];
+        }
+
+        @Override
+        public BaseComponent[] composeLegacy(String text) {
+            return new BaseComponent[0];
+        }
+
+        @Override
+        public BaseComponent[] composeJson(String json) {
+            return new BaseComponent[0];
+        }
+
     }
 
     /**
