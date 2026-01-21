@@ -528,6 +528,9 @@ public class FilterTokenizer extends Tokenizer {
     }
 
     private DetectedPlayer matchPartialPlayer(String input, String id) {
+        if (input.isEmpty())
+            return null;
+
         // Check display names first
         for (Player player : Bukkit.getOnlinePlayers()) {
             int matchLength = this.getMatchLength(input, ChatColor.stripColor(player.getDisplayName()), id);
