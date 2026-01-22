@@ -163,7 +163,8 @@ public class FilterTokenizer extends Tokenizer {
             }
 
             if (filter.tagPlayers())
-                this.tagPlayers(params, filter, content);
+                if (!this.tagPlayers(params, filter, content))
+                    continue;
 
             Token token = this.createFilterToken(params, filter, replacement)
                     .placeholder("group_0", match)
@@ -232,7 +233,8 @@ public class FilterTokenizer extends Tokenizer {
         }
 
         if (filter.tagPlayers())
-            this.tagPlayers(params, filter, content);
+            if (!this.tagPlayers(params, filter, content))
+                return;
 
         Token.Builder token = this.createFilterToken(params, filter, replacement)
                 .placeholder("message", match)
@@ -314,7 +316,8 @@ public class FilterTokenizer extends Tokenizer {
                 }
 
                 if (filter.tagPlayers())
-                    this.tagPlayers(params, filter, content);
+                    if (!this.tagPlayers(params, filter, content))
+                        continue;
 
                 Token.Builder token = this.createFilterToken(params, filter, replacement)
                         .placeholder("message", match)
@@ -491,7 +494,10 @@ public class FilterTokenizer extends Tokenizer {
                 "&f" + content + "&r" : content;
     }
 
-    private void tagPlayers(TokenizerParams params, Filter filter, String content) {
+    private boolean tagPlayers(TokenizerParams params, Filter filter, String content) {
+        if (content.isEmpty())
+            return false;
+
         DetectedPlayer detectedPlayer = this.matchPartialPlayer(content, filter.id());
         if (detectedPlayer != null) {
             Player taggedPlayer = detectedPlayer.player;
@@ -500,6 +506,7 @@ public class FilterTokenizer extends Tokenizer {
         } else {
             params.getOutputs().setPlaceholderTarget(new RosePlayer(content, "default"));
         }
+        return true;
     }
 
     private Token.Builder createFilterToken(TokenizerParams params, Filter filter, String content) {
@@ -528,9 +535,6 @@ public class FilterTokenizer extends Tokenizer {
     }
 
     private DetectedPlayer matchPartialPlayer(String input, String id) {
-        if (input.isEmpty())
-            return null;
-
         // Check display names first
         for (Player player : Bukkit.getOnlinePlayers()) {
             int matchLength = this.getMatchLength(input, ChatColor.stripColor(player.getDisplayName()), id);

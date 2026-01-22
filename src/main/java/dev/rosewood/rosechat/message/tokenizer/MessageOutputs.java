@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 public class MessageOutputs {
 
-    private final List<UUID> taggedPlayers;
+    private final Set<UUID> taggedPlayers;
     private final Map<String, Boolean> checkedPermissions;
     private final List<String> serverCommands;
     private final List<String> playerCommands;
@@ -24,13 +24,13 @@ public class MessageOutputs {
     private RosePlayer placeholderTarget;
 
     public MessageOutputs() {
-        this.taggedPlayers = new ArrayList<>();
+        this.taggedPlayers = new HashSet<>();
         this.checkedPermissions = new LinkedHashMap<>();
         this.serverCommands = new ArrayList<>();
         this.playerCommands = new ArrayList<>();
     }
 
-    public List<UUID> getTaggedPlayers() {
+    public Set<UUID> getTaggedPlayers() {
         return this.taggedPlayers;
     }
 
