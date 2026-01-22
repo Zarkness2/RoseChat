@@ -61,12 +61,6 @@ public interface ChatComposer<T> {
          */
         T compose(Component component);
 
-        T compose(Token token);
-
-        T composeLegacy(String text);
-
-        T composeJson(String json);
-
     }
 
     /**

@@ -122,7 +122,7 @@ public class MarkdownChatComposer implements ChatComposer<String> {
     }
 
     @Override
-    public ChatComposer.Adventure<String> composeAdventure() {
+    public Adventure composeAdventure() {
         return Adventure.INSTANCE;
     }
 
@@ -140,21 +140,6 @@ public class MarkdownChatComposer implements ChatComposer<String> {
          */
         @Override
         public String compose(Component component) {
-            throw new UnsupportedOperationException("Not implemented");
-        }
-
-        @Override
-        public String compose(Token token) {
-            return "";
-        }
-
-        @Override
-        public String composeLegacy(String text) {
-            throw new UnsupportedOperationException("Not implemented");
-        }
-
-        @Override
-        public String composeJson(String json) {
             throw new UnsupportedOperationException("Not implemented");
         }
 

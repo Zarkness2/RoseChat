@@ -48,7 +48,7 @@ public class LegacyTextComposer implements ChatComposer<String> {
     }
 
     @Override
-    public ChatComposer.Adventure<String> composeAdventure() {
+    public Adventure composeAdventure() {
         return Adventure.INSTANCE;
     }
 
@@ -70,19 +70,16 @@ public class LegacyTextComposer implements ChatComposer<String> {
             return LEGACY_SERIALIZER.serialize(component);
         }
 
-        @Override
-        public String compose(Token token) {
+        private String compose(Token token) {
             Component component = ChatComposer.adventure().styles().compose(token);
             return LegacyComponentSerializer.legacySection().serialize(component);
         }
 
-        @Override
-        public String composeLegacy(String text) {
+        private String composeLegacy(String text) {
             return text;
         }
 
-        @Override
-        public String composeJson(String json) {
+        private String composeJson(String json) {
             Component component = GsonComponentSerializer.gson().deserialize(json);
             return LegacyComponentSerializer.legacySection().serialize(component);
         }

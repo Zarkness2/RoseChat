@@ -127,36 +127,21 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
     }
 
     @Override
-    public ChatComposer.Adventure<BaseComponent[]> composeAdventure() {
+    public Adventure composeAdventure() {
         return Adventure.INSTANCE;
     }
 
-    public static final class Adventure implements ChatComposer.Adventure<BaseComponent[]> {
+    public static class Adventure implements ChatComposer.Adventure<BaseComponent[]> {
 
         private static final Adventure INSTANCE = new Adventure();
 
-        private Adventure() {
+        Adventure() {
 
         }
 
         @Override
         public BaseComponent[] compose(Component component) {
             return BungeeComponentSerializer.get().serialize(component);
-        }
-
-        @Override
-        public BaseComponent[] compose(Token token) {
-            return new BaseComponent[0];
-        }
-
-        @Override
-        public BaseComponent[] composeLegacy(String text) {
-            return new BaseComponent[0];
-        }
-
-        @Override
-        public BaseComponent[] composeJson(String json) {
-            return new BaseComponent[0];
         }
 
     }

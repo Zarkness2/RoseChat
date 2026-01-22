@@ -48,7 +48,7 @@ public class JsonComposer implements ChatComposer<String> {
     }
 
     @Override
-    public ChatComposer.Adventure<String> composeAdventure() {
+    public Adventure composeAdventure() {
         return Adventure.INSTANCE;
     }
 
@@ -65,21 +65,14 @@ public class JsonComposer implements ChatComposer<String> {
             return GsonComponentSerializer.gson().serialize(component);
         }
 
-        @Override
-        public String compose(Token token) {
+        private String compose(Token token) {
             Component component = ChatComposer.adventure().decorated().compose(token);
             return GsonComponentSerializer.gson().serialize(component);
         }
 
-        @Override
-        public String composeLegacy(String text) {
+        private String composeLegacy(String text) {
             Component component = LegacyComponentSerializer.legacySection().deserialize(text);
             return GsonComponentSerializer.gson().serialize(component);
-        }
-
-        @Override
-        public String composeJson(String json) {
-            return json;
         }
 
     }

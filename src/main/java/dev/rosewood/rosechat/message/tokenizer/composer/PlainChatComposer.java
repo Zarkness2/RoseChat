@@ -59,7 +59,7 @@ public class PlainChatComposer implements ChatComposer<String> {
     }
 
     @Override
-    public ChatComposer.Adventure<String> composeAdventure() {
+    public Adventure composeAdventure() {
         return Adventure.INSTANCE;
     }
 
@@ -76,18 +76,7 @@ public class PlainChatComposer implements ChatComposer<String> {
             return PlainTextComponentSerializer.plainText().serialize(component);
         }
 
-        @Override
-        public String compose(Token token) {
-            return "";
-        }
-
-        @Override
-        public String composeLegacy(String text) {
-            return "";
-        }
-
-        @Override
-        public String composeJson(String json) {
+        private String composeJson(String json) {
             Component component = GsonComponentSerializer.gson().deserialize(json);
             return PlainTextComponentSerializer.plainText().serialize(component);
         }
