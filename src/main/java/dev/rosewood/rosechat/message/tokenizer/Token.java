@@ -148,6 +148,10 @@ public class Token {
         return builder.build();
     }
 
+    public static Token empty() {
+        return text("");
+    }
+
     public static Token text(String value) {
         return new Builder(TokenType.CONTENT, new TextTokenContent(value)).build();
     }

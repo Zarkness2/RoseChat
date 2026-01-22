@@ -467,7 +467,7 @@ public class FilterTokenizer extends Tokenizer {
 
     private List<TokenizerResult> validateRemoval(int start, String match) {
         return Settings.REMOVE_FILTERS.get() ?
-                List.of(new TokenizerResult(Token.text(" "), start, match.length())) :
+                List.of(new TokenizerResult(Token.empty(), start, match.length())) :
                 List.of();
     }
     

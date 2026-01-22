@@ -46,7 +46,7 @@ public class RoseChatPlaceholderTokenizer extends Tokenizer {
                 if (playerInput == null || playerInput.isEmpty()) {
                     RoseChat.getInstance().getLogger().warning("Parsed " + placeholder + " with no player message. This is likely a configuration error. Printing a stacktrace for help.");
                     new RuntimeException().printStackTrace();
-                    results.add(new TokenizerResult(Token.text(""), matcher.start(), placeholder.length()));
+                    results.add(new TokenizerResult(Token.empty(), matcher.start(), placeholder.length()));
                     continue;
                 }
 
