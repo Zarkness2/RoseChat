@@ -21,13 +21,15 @@ import dev.rosewood.rosechat.hook.discord.DiscordChatProvider;
 import dev.rosewood.rosechat.hook.discord.DiscordSRVProvider;
 import dev.rosewood.rosechat.hook.nickname.EssentialsHook;
 import dev.rosewood.rosechat.hook.nickname.NicknameProvider;
+import dev.rosewood.rosechat.listener.packet.AdventurePacketListener;
 import dev.rosewood.rosechat.listener.BungeeListener;
 import dev.rosewood.rosechat.listener.ChatListener;
 import dev.rosewood.rosechat.listener.DiscordSRVListener;
-import dev.rosewood.rosechat.listener.PacketListener;
+import dev.rosewood.rosechat.listener.packet.BungeePacketListener;
 import dev.rosewood.rosechat.listener.PlayerListener;
 import dev.rosewood.rosechat.listener.SidedSignListener;
 import dev.rosewood.rosechat.listener.SignListener;
+import dev.rosewood.rosechat.listener.packet.PacketListener;
 import dev.rosewood.rosechat.manager.BungeeManager;
 import dev.rosewood.rosechat.manager.ChannelManager;
 import dev.rosewood.rosechat.manager.CommandManager;
@@ -135,9 +137,12 @@ public class RoseChat extends RosePlugin {
         // Unregister and register the packet event for a configurable priority.
         PluginManager pluginManager = Bukkit.getPluginManager();
         if (pluginManager.isPluginEnabled("ProtocolLib") && NMSUtil.getVersionNumber() >= 17) {
-            PacketListener packetListener = new PacketListener(this);
+            PacketListener<?> packetListener = NMSUtil.isPaper() ? new AdventurePacketListener(this) : new BungeePacketListener(this);
             packetListener.removeListeners();
-            packetListener.addListener();
+
+            // Only add the listener if deleting messages is enabled.
+            if (Settings.ENABLE_DELETING_MESSAGES.get())
+                packetListener.addListener();
         }
 
         this.registerChannelHooks(pluginManager);

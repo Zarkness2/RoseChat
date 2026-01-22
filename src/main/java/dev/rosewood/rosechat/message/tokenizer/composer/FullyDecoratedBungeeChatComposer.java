@@ -79,6 +79,9 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
     }
 
     private void appendContent(ComponentBuilder componentBuilder, StringBuilder contentBuilder, BungeeTokenDecorators contextDecorators, Token parent, TokenContent content) {
+        if (!content.isValid())
+            return;
+
         switch (content) {
             case TextTokenContent(String s) -> contentBuilder.append(s);
             case HeadTokenContent(String name, UUID uuid, String texture, boolean outerLayer) -> {

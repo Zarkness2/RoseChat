@@ -3,11 +3,13 @@ package dev.rosewood.rosechat.chat;
 import dev.rosewood.rosechat.RoseChat;
 import dev.rosewood.rosechat.api.RoseChatAPI;
 import dev.rosewood.rosechat.chat.channel.Channel;
+import dev.rosewood.rosechat.chat.log.AdventureMessageLog;
 import dev.rosewood.rosechat.chat.log.PlayerMessageLog;
 import dev.rosewood.rosechat.chat.task.MuteTask;
 import dev.rosewood.rosechat.hook.channel.rosechat.GroupChannel;
 import dev.rosewood.rosechat.manager.PlayerDataManager;
 import dev.rosewood.rosegarden.utils.HexUtils;
+import dev.rosewood.rosegarden.utils.NMSUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -50,7 +52,7 @@ public class PlayerData {
         this.api = RoseChatAPI.getInstance();
 
         this.uuid = uuid;
-        this.messageLog = new PlayerMessageLog(uuid);
+        this.messageLog = NMSUtil.isPaper() ? new AdventureMessageLog(uuid) : new PlayerMessageLog(uuid);
         this.canBeMessaged = true;
         this.tagSounds = true;
         this.messageSounds = true;

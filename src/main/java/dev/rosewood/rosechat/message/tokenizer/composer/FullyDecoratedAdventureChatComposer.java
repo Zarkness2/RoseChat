@@ -74,6 +74,9 @@ public class FullyDecoratedAdventureChatComposer implements ChatComposer<Compone
     }
 
     private Component appendContent(Component componentBuilder, StringBuilder contentBuilder, AdventureTokenDecorators contextDecorators, Token parent,TokenContent content) {
+        if (!content.isValid())
+            return componentBuilder;
+
         return switch (content) {
             case TextTokenContent(String s) -> {
                 contentBuilder.append(s);
