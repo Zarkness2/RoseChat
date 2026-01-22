@@ -45,11 +45,11 @@ public class StylesOnlyAdventureChatComposer extends FullyDecoratedAdventureChat
     }
 
     @Override
-    public ChatComposer.Adventure<Component> composeAdventure() {
+    public FullyDecoratedAdventureChatComposer.Adventure composeAdventure() {
         return Adventure.INSTANCE;
     }
 
-    public static final class Adventure implements ChatComposer.Adventure<Component> {
+    public static final class Adventure extends FullyDecoratedAdventureChatComposer.Adventure {
 
         private static final Adventure INSTANCE = new Adventure();
 

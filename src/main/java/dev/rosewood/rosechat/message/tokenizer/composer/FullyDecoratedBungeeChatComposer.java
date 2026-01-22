@@ -1,14 +1,25 @@
 package dev.rosewood.rosechat.message.tokenizer.composer;
 
+import dev.rosewood.rosechat.config.Settings;
 import dev.rosewood.rosechat.message.MessageUtils;
 import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.TokenType;
 import dev.rosewood.rosechat.message.tokenizer.composer.decorator.bungee.BungeeTokenDecorators;
+import dev.rosewood.rosechat.message.tokenizer.content.HeadTokenContent;
+import dev.rosewood.rosechat.message.tokenizer.content.SpriteTokenContent;
+import dev.rosewood.rosechat.message.tokenizer.content.TextTokenContent;
+import dev.rosewood.rosechat.message.tokenizer.content.TokenContent;
+import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.ObjectComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.chat.objects.PlayerObject;
+import net.md_5.bungee.api.chat.objects.SpriteObject;
+import net.md_5.bungee.api.chat.player.Profile;
+import net.md_5.bungee.api.chat.player.Property;
 
 public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseComponent[]> {
 
@@ -31,11 +42,11 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
         StringBuilder contentBuilder = new StringBuilder();
 
         for (Token child : token.getChildren()) {
-            if ((child.getType() != TokenType.TEXT || contextDecorators.blocksTextStitching()) && !contentBuilder.isEmpty())
+            if ((child.getType() != TokenType.CONTENT || contextDecorators.blocksTextStitching() || !(child.getContent() instanceof TextTokenContent)) && !contentBuilder.isEmpty())
                 this.applyAndDecorate(componentBuilder, contentBuilder, child, contextDecorators);
 
             switch (child.getType()) {
-                case TEXT -> contentBuilder.append(child.getContent());
+                case CONTENT -> this.appendContent(componentBuilder, contentBuilder, contextDecorators, child, child.getContent());
                 case DECORATOR -> contextDecorators.add(child.getDecorators());
                 case GROUP -> {
                     BungeeTokenDecorators childDecorators = child.shouldEncapsulate() ? this.createDecorators(contextDecorators) : contextDecorators;
@@ -65,6 +76,24 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
 
     protected BungeeTokenDecorators createDecorators(BungeeTokenDecorators contextDecorators) {
         return new BungeeTokenDecorators(contextDecorators);
+    }
+
+    private void appendContent(ComponentBuilder componentBuilder, StringBuilder contentBuilder, BungeeTokenDecorators contextDecorators, Token parent, TokenContent content) {
+        switch (content) {
+            case TextTokenContent(String s) -> contentBuilder.append(s);
+            case HeadTokenContent(String name, UUID uuid, String texture, boolean outerLayer) -> {
+                BaseComponent headComponent = ChatObjectHelper.createHeadComponent(name, uuid, texture, outerLayer);
+                if (headComponent == null)
+                    return;
+                componentBuilder.append(headComponent, ComponentBuilder.FormatRetention.NONE);
+                contextDecorators.apply(componentBuilder.getCurrentComponent(), parent, !Settings.COLOR_HEADS_AND_SPRITES.get());
+            }
+            case SpriteTokenContent(String atlas, String sprite) -> {
+                BaseComponent spriteComponent = ChatObjectHelper.createSpriteComponent(atlas, sprite);
+                componentBuilder.append(spriteComponent, ComponentBuilder.FormatRetention.NONE);
+                contextDecorators.apply(componentBuilder.getCurrentComponent(), parent, !Settings.COLOR_HEADS_AND_SPRITES.get());
+            }
+        }
     }
 
     private void applyAndDecorate(ComponentBuilder componentBuilder, StringBuilder contentBuilder, Token token, BungeeTokenDecorators contextDecorators) {
@@ -98,21 +127,48 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
     }
 
     @Override
-    public ChatComposer.Adventure<BaseComponent[]> composeAdventure() {
+    public Adventure composeAdventure() {
         return Adventure.INSTANCE;
     }
 
-    public static final class Adventure implements ChatComposer.Adventure<BaseComponent[]> {
+    public static class Adventure implements ChatComposer.Adventure<BaseComponent[]> {
 
         private static final Adventure INSTANCE = new Adventure();
 
-        private Adventure() {
+        Adventure() {
 
         }
 
         @Override
         public BaseComponent[] compose(Component component) {
             return BungeeComponentSerializer.get().serialize(component);
+        }
+
+    }
+
+    /**
+     * I'm not exactly sure why this is required but simply loading this class on Paper 1.21.11 causes it to give a NoClassDefFoundError for ChatObject even though it isn't used
+     */
+    private static class ChatObjectHelper {
+
+        public static BaseComponent createHeadComponent(String name, UUID uuid, String texture, boolean outerLayer) {
+            PlayerObject playerObject;
+            if (name != null) {
+                playerObject = new PlayerObject(new Profile(name), outerLayer);
+            } else if (uuid != null) {
+                playerObject = new PlayerObject(new Profile(uuid), outerLayer);
+            } else if (texture != null) {
+                playerObject = new PlayerObject(new Profile(new Property[]{ new Property("textures", texture)}), outerLayer);
+            } else {
+                return null;
+            }
+
+            return new ObjectComponent(playerObject);
+        }
+
+        public static BaseComponent createSpriteComponent(String atlas, String sprite) {
+            SpriteObject spriteObject = new SpriteObject(atlas, sprite);
+            return new ObjectComponent(spriteObject);
         }
 
     }

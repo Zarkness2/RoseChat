@@ -45,16 +45,16 @@ public class StylesOnlyBungeeChatComposer extends FullyDecoratedBungeeChatCompos
     }
 
     @Override
-    public ChatComposer.Adventure<BaseComponent[]> composeAdventure() {
+    public FullyDecoratedBungeeChatComposer.Adventure composeAdventure() {
         return Adventure.INSTANCE;
     }
 
-    public static final class Adventure implements ChatComposer.Adventure<BaseComponent[]> {
+    public static final class Adventure extends FullyDecoratedBungeeChatComposer.Adventure {
 
         private static final Adventure INSTANCE = new Adventure();
 
         private Adventure() {
-
+            super();
         }
 
         /**

@@ -258,7 +258,7 @@ public class PlayerData {
      * @param displayName The display name.
      */
     public void setStrippedDisplayName(String displayName) {
-        this.strippedDisplayName = ChatColor.stripColor(HexUtils.colorify(displayName));
+        this.strippedDisplayName = ChatColor.stripColor(HexUtils.colorify(displayName)).toLowerCase();
     }
 
     /**

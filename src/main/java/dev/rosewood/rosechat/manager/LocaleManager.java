@@ -6,6 +6,7 @@ import dev.rosewood.rosegarden.RosePlugin;
 import dev.rosewood.rosegarden.manager.AbstractLocaleManager;
 import dev.rosewood.rosegarden.utils.StringPlaceholders;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
 public class LocaleManager extends AbstractLocaleManager {
@@ -20,7 +21,7 @@ public class LocaleManager extends AbstractLocaleManager {
 
         if (!prefix) {
             RosePlayer rosePlayer = new RosePlayer(sender);
-            rosePlayer.send(RoseChatAPI.getInstance().parse(rosePlayer, rosePlayer, this.getMessage(messageKey)));
+            rosePlayer.send(RoseChatAPI.getInstance().parse(new RosePlayer(Bukkit.getConsoleSender()), rosePlayer, this.getMessage(messageKey)));
         } else {
             this.sendComponentMessage(sender, messageKey);
         }
@@ -32,7 +33,7 @@ public class LocaleManager extends AbstractLocaleManager {
 
         if (!prefix) {
             RosePlayer rosePlayer = new RosePlayer(sender);
-            rosePlayer.send(RoseChatAPI.getInstance().parse(rosePlayer, rosePlayer, this.getMessage(messageKey, stringPlaceholders)));
+            rosePlayer.send(RoseChatAPI.getInstance().parse(new RosePlayer(Bukkit.getConsoleSender()), rosePlayer, this.getMessage(messageKey, stringPlaceholders)));
         } else {
             this.sendComponentMessage(sender, messageKey, stringPlaceholders);
         }
@@ -64,7 +65,7 @@ public class LocaleManager extends AbstractLocaleManager {
         if (this.getMessage(messageKey).isEmpty())
             return;
 
-        sender.send(RoseChatAPI.getInstance().parse(sender, sender, this.getMessage("prefix") + this.getMessage(messageKey, stringPlaceholders)));
+        sender.send(RoseChatAPI.getInstance().parse(new RosePlayer(Bukkit.getConsoleSender()), sender, this.getMessage("prefix") + this.getMessage(messageKey, stringPlaceholders)));
     }
 
     public String getMessage(String messageKey) {

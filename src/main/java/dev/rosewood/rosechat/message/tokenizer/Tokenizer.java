@@ -95,20 +95,33 @@ public abstract class Tokenizer {
      * @return true if the player has the permission, false otherwise
      */
     public static boolean checkPermission(TokenizerParams params, String permission) {
+        return checkPermission(params, permission, true);
+    }
+
+    /**
+     * Checks if a sender has a permission, caches the result, and adds it to the message output permissions if {@code output} is true
+     *
+     * @param params The TokenizerParams
+     * @param permission The permission to check
+     * @return true if the player has the permission, false otherwise
+     */
+    public static boolean checkPermission(TokenizerParams params, String permission, boolean output) {
         Boolean hasPermission = params.getOutputs().getCheckedPermissions().get(permission);
         if (hasPermission != null)
             return hasPermission;
 
         if (PERMISSION_CACHE_DURATION == 0) {
             hasPermission = params.getSender().hasPermission(permission);
-            params.getOutputs().getCheckedPermissions().put(permission, hasPermission);
+            if (output)
+                params.getOutputs().getCheckedPermissions().put(permission, hasPermission);
             return hasPermission;
         }
 
         try {
             PermissionCacheKey cacheKey = new PermissionCacheKey(params.getSender(), permission);
             boolean cachedPermission = PERMISSION_CACHE.get(cacheKey, () -> params.getSender().hasPermission(permission));
-            params.getOutputs().getCheckedPermissions().put(permission, cachedPermission);
+            if (output)
+                params.getOutputs().getCheckedPermissions().put(permission, cachedPermission);
             return cachedPermission;
         } catch (ExecutionException e) {
             throw new IllegalStateException("Failed to check permission: " + permission);

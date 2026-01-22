@@ -21,6 +21,8 @@ import dev.rosewood.rosechat.message.tokenizer.placeholder.PAPIPlaceholderTokeni
 import dev.rosewood.rosechat.message.tokenizer.placeholder.RoseChatPlaceholderTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.placeholder.TokenPlaceholderTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.shader.ShaderTokenizer;
+import dev.rosewood.rosechat.message.tokenizer.sprite.HeadTokenizer;
+import dev.rosewood.rosechat.message.tokenizer.sprite.SpriteTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.style.ColorTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.style.FormatTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.style.GradientTokenizer;
@@ -48,6 +50,8 @@ public class Tokenizers {
     public static final Tokenizer MARKDOWN_ITALIC = new MarkdownItalicTokenizer();
     public static final Tokenizer MARKDOWN_UNDERLINE = new MarkdownUnderlineTokenizer();
     public static final Tokenizer MARKDOWN_STRIKETHROUGH = new MarkdownStrikethroughTokenizer();
+//    public static final Tokenizer SPRITE = new SpriteTokenizer();
+//    public static final Tokenizer HEAD = new HeadTokenizer();
     public static final Tokenizer GRADIENT = new GradientTokenizer();
     public static final Tokenizer RAINBOW = new RainbowTokenizer();
     public static final Tokenizer SHADER_COLORS = new ShaderTokenizer();
@@ -64,6 +68,8 @@ public class Tokenizers {
             ROSECHAT_PLACEHOLDER,
             TOKEN_PLACEHOLDER,
             PAPI_PLACEHOLDER,
+//            SPRITE,
+//            HEAD,
             FILTER,
             GRADIENT,
             RAINBOW,

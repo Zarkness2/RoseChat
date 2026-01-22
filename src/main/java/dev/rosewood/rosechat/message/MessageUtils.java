@@ -6,19 +6,19 @@ import dev.rosewood.rosechat.api.event.player.PlayerReceiveMessageEvent;
 import dev.rosewood.rosechat.api.event.player.PlayerSendMessageEvent;
 import dev.rosewood.rosechat.chat.PlayerData;
 import dev.rosewood.rosechat.config.Settings;
-import dev.rosewood.rosechat.message.parser.MessageParser;
+import dev.rosewood.rosechat.message.MessageRules.RuleOutputs;
+import dev.rosewood.rosechat.message.contents.MessageContents;
 import dev.rosewood.rosechat.message.tokenizer.MessageTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizers;
 import dev.rosewood.rosechat.message.tokenizer.composer.ChatComposer;
 import dev.rosewood.rosechat.message.tokenizer.placeholder.RoseChatPlaceholderTokenizer;
 import dev.rosewood.rosechat.message.tokenizer.shader.ShaderTokenizer;
-import dev.rosewood.rosechat.message.MessageRules.RuleOutputs;
-import dev.rosewood.rosechat.message.contents.MessageContents;
 import dev.rosewood.rosechat.placeholder.DefaultPlaceholders;
 import dev.rosewood.rosegarden.hook.PlaceholderAPIHook;
 import dev.rosewood.rosegarden.utils.HexUtils;
 import dev.rosewood.rosegarden.utils.StringPlaceholders;
 import java.text.Normalizer;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -149,12 +149,17 @@ public class MessageUtils {
      */
     public static void sendPrivateMessage(RosePlayer sender, String targetName, String message) {
         RoseChatAPI api = RoseChatAPI.getInstance();
+        String consoleName = api.getLocaleManager().getMessage("console-sender-name");
+        boolean isConsoleName = targetName.equalsIgnoreCase("Console") ||
+                targetName.equalsIgnoreCase(ChatColor.stripColor(HexUtils.colorify(consoleName)));
 
         Player target = MessageUtils.getPlayerExact(targetName);
-        RosePlayer messageTarget = target == null ? new RosePlayer(targetName, "default") : new RosePlayer(target);
+        RosePlayer messageTarget = (target == null ?
+                (isConsoleName ? new RosePlayer(consoleName, "default") : new RosePlayer(targetName, "default"))
+                : new RosePlayer(target));
 
         // Quickly return if the player isn't online on any connected servers.
-        if (!targetName.equalsIgnoreCase("Console")) {
+        if (!isConsoleName) {
             if (!api.isBungee() && target == null) {
                 sender.sendLocaleMessage("invalid-argument",
                         StringPlaceholders.of("message",
@@ -218,7 +223,7 @@ public class MessageUtils {
         MessageContents parsedMessage = roseMessage.parse(messageTarget, Settings.CONSOLE_MESSAGE_FORMAT.get());
 
         // If the console is not the target of the message, send the console message format. Otherwise, send the received message format later.
-        if (!targetName.equalsIgnoreCase("Console") && !sender.isConsole())
+        if (!isConsoleName && !sender.isConsole())
             new RosePlayer(Bukkit.getConsoleSender()).send(parsedMessage);
 
         // Parse for the spies.
@@ -253,7 +258,7 @@ public class MessageUtils {
 
             if (target == null) {
                 // If the target is not valid and the name is "Console", then send the message to the console.
-                if (targetName.equalsIgnoreCase("Console")) {
+                if (isConsoleName) {
                     sender.send(parsedSentMessage);
                     receivedMessageOutput.sendMessage(Bukkit.getConsoleSender());
                 } else {
@@ -469,9 +474,11 @@ public class MessageUtils {
         RoseMessage message = RoseMessage.forLocation(sender, area);
         message.setPlayerInput(str);
         MessageContents components = MessageTokenizer.tokenize(message, sender, RoseChatPlaceholderTokenizer.MESSAGE_PLACEHOLDER, MessageDirection.PLAYER_TO_SERVER,
+                Tokenizers.ROSECHAT_PLACEHOLDER.asBundle(),
                 Tokenizers.FILTER.asBundle(),
                 Tokenizers.COLORS_BUNDLE);
-        return components.outputs().getMissingPermissions().isEmpty();
+        Set<String> missingPermissions = components.outputs().getMissingPermissions();
+        return missingPermissions.isEmpty();
 
 //        Matcher colorMatcher = VALID_LEGACY_REGEX.matcher(str);
 //        Matcher hexMatcher = HEX_REGEX.matcher(str);

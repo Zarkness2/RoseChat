@@ -1,6 +1,8 @@
 package dev.rosewood.rosechat.message.tokenizer;
 
 import dev.rosewood.rosechat.chat.filter.Filter;
+import dev.rosewood.rosechat.message.tokenizer.content.TextTokenContent;
+import dev.rosewood.rosechat.message.tokenizer.content.TokenContent;
 import dev.rosewood.rosechat.message.tokenizer.decorator.TokenDecorator;
 import dev.rosewood.rosegarden.utils.StringPlaceholders;
 import java.util.ArrayList;
@@ -14,7 +16,7 @@ public class Token {
     protected Token parent; // Exposed and set in the MessageTokenizer class
     private final List<Token> children;
     private final TokenType type;
-    private final String content;
+    private final TokenContent content;
     private final List<TokenDecorator> decorators;
     private final PlayerInputState playerInputState;
     private final StringPlaceholders placeholders;
@@ -22,7 +24,7 @@ public class Token {
     private final Set<Tokenizer> ignoredTokenizers;
     private final Set<String> ignoredFilters;
 
-    private Token(TokenType type, String content, List<Token> children, List<TokenDecorator> decorators, PlayerInputState playerInputState,
+    private Token(TokenType type, TokenContent content, List<Token> children, List<TokenDecorator> decorators, PlayerInputState playerInputState,
                   StringPlaceholders placeholders, boolean encapsulate, Set<Tokenizer> ignoredTokenizers, Set<String> ignoredFilters) {
         this.type = type;
         this.content = content;
@@ -48,12 +50,12 @@ public class Token {
      * @return the content of this token
      * @throws IllegalStateException if this token has a type of {@link TokenType#DECORATOR}
      */
-    public String getContent() {
+    public TokenContent getContent() {
         if (this.type == TokenType.DECORATOR)
             throw new IllegalStateException("Cannot get content of a token that is of type DECORATOR");
 
         if (this.content == null)
-            return "";
+            return new TextTokenContent("");
 
         return this.content;
     }
@@ -75,7 +77,7 @@ public class Token {
      * @return the decorators to be applied to this token
      */
     public List<TokenDecorator> getDecorators() {
-        if (this.type == TokenType.TEXT)
+        if (this.type == TokenType.CONTENT)
             throw new IllegalStateException("Cannot get decorators of a token that is of type TEXT");
 
         return this.decorators;
@@ -146,16 +148,24 @@ public class Token {
         return builder.build();
     }
 
+    public static Token empty() {
+        return text("");
+    }
+
     public static Token text(String value) {
-        return new Builder(TokenType.TEXT, value).build();
+        return new Builder(TokenType.CONTENT, new TextTokenContent(value)).build();
+    }
+
+    public static Token content(TokenContent content) {
+        return new Builder(TokenType.CONTENT, content).build();
     }
 
     public static Token decorator(TokenDecorator decorator) {
-        return new Builder(TokenType.DECORATOR, "").decorate(decorator).build();
+        return new Builder(TokenType.DECORATOR, (TokenContent) null).decorate(decorator).build();
     }
 
     public static Builder group(String rawContent) {
-        return new Builder(TokenType.GROUP, rawContent);
+        return new Builder(TokenType.GROUP, new TextTokenContent(rawContent));
     }
 
     public static Builder group(List<Token> children) {
@@ -169,7 +179,7 @@ public class Token {
     public static class Builder {
 
         private final TokenType tokenType;
-        private final String content;
+        private final TokenContent content;
         private final List<Token> children;
         private final List<TokenDecorator> decorators;
         private PlayerInputState playerInputState;
@@ -178,9 +188,9 @@ public class Token {
         private Set<Tokenizer> ignoredTokenizers;
         private Set<String> ignoredFilters;
 
-        private Builder(TokenType tokenType, String content) {
+        private Builder(TokenType tokenType, TokenContent content) {
             this.tokenType = tokenType;
-            this.content = content == null ? "" : content;
+            this.content = content;
             this.children = new ArrayList<>();
             this.decorators = new ArrayList<>();
             this.playerInputState = PlayerInputState.DEFAULT;
@@ -188,7 +198,7 @@ public class Token {
 
         private Builder(TokenType tokenType, List<Token> children) {
             this.tokenType = tokenType;
-            this.content = "";
+            this.content = null;
             this.children = new ArrayList<>(children);
             this.decorators = new ArrayList<>();
             this.playerInputState = PlayerInputState.DEFAULT;

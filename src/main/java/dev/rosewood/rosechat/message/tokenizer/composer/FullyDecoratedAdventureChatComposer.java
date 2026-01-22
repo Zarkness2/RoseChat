@@ -1,9 +1,18 @@
 package dev.rosewood.rosechat.message.tokenizer.composer;
 
+import dev.rosewood.rosechat.config.Settings;
 import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.TokenType;
 import dev.rosewood.rosechat.message.tokenizer.composer.decorator.adventure.AdventureTokenDecorators;
+import dev.rosewood.rosechat.message.tokenizer.content.HeadTokenContent;
+import dev.rosewood.rosechat.message.tokenizer.content.SpriteTokenContent;
+import dev.rosewood.rosechat.message.tokenizer.content.TextTokenContent;
+import dev.rosewood.rosechat.message.tokenizer.content.TokenContent;
+import java.util.UUID;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.object.ObjectContents;
+import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -30,11 +39,11 @@ public class FullyDecoratedAdventureChatComposer implements ChatComposer<Compone
         StringBuilder contentBuilder = new StringBuilder();
 
         for (Token child : token.getChildren()) {
-            if ((child.getType() != TokenType.TEXT || contextDecorators.blocksTextStitching()) && !contentBuilder.isEmpty())
+            if ((child.getType() != TokenType.CONTENT || contextDecorators.blocksTextStitching() || !(child.getContent() instanceof TextTokenContent)) && !contentBuilder.isEmpty())
                 componentBuilder = this.applyAndDecorate(componentBuilder, contentBuilder, child, contextDecorators);
 
             switch (child.getType()) {
-                case TEXT -> contentBuilder.append(child.getContent());
+                case CONTENT -> componentBuilder = this.appendContent(componentBuilder, contentBuilder, contextDecorators, child, child.getContent());
                 case DECORATOR -> contextDecorators.add(child.getDecorators());
                 case GROUP -> {
                     AdventureTokenDecorators childDecorators = child.shouldEncapsulate() ? this.createDecorators(contextDecorators) : contextDecorators;
@@ -62,6 +71,36 @@ public class FullyDecoratedAdventureChatComposer implements ChatComposer<Compone
 
     protected AdventureTokenDecorators createDecorators(AdventureTokenDecorators contextDecorators) {
         return new AdventureTokenDecorators(contextDecorators);
+    }
+
+    private Component appendContent(Component componentBuilder, StringBuilder contentBuilder, AdventureTokenDecorators contextDecorators, Token parent,TokenContent content) {
+        return switch (content) {
+            case TextTokenContent(String s) -> {
+                contentBuilder.append(s);
+                yield componentBuilder;
+            }
+            case HeadTokenContent(String name, UUID uuid, String texture, boolean outerLayer) -> {
+                PlayerHeadObjectContents.Builder builder = ObjectContents.playerHead();
+                builder.hat(outerLayer);
+
+                if (name != null) {
+                    builder.name(name);
+                } else if (uuid != null) {
+                    builder.id(uuid);
+                } else if (texture != null) {
+                    builder.texture(Key.key(texture));
+                } else {
+                    yield componentBuilder;
+                }
+
+                Component headComponent = Component.object(builder.build());
+                yield componentBuilder.append(contextDecorators.apply(headComponent, parent, !Settings.COLOR_HEADS_AND_SPRITES.get()));
+            }
+            case SpriteTokenContent(String atlas, String sprite) -> {
+                Component spriteComponent = Component.object(ObjectContents.sprite(Key.key(atlas), Key.key(sprite)));
+                yield componentBuilder.append(contextDecorators.apply(spriteComponent, parent, !Settings.COLOR_HEADS_AND_SPRITES.get()));
+            }
+        };
     }
 
     private Component applyAndDecorate(Component component, StringBuilder contentBuilder, Token token, AdventureTokenDecorators contextDecorators) {
@@ -93,15 +132,15 @@ public class FullyDecoratedAdventureChatComposer implements ChatComposer<Compone
     }
 
     @Override
-    public ChatComposer.Adventure<Component> composeAdventure() {
+    public Adventure composeAdventure() {
         return Adventure.INSTANCE;
     }
 
-    public static final class Adventure implements ChatComposer.Adventure<Component> {
+    public static class Adventure implements ChatComposer.Adventure<Component> {
 
         private static final Adventure INSTANCE = new Adventure();
 
-        private Adventure() {
+        Adventure() {
 
         }
 

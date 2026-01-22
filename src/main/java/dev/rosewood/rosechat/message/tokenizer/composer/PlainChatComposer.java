@@ -32,7 +32,7 @@ public class PlainChatComposer implements ChatComposer<String> {
 
         for (Token child : token.getChildren()) {
             switch (child.getType()) {
-                case TEXT -> stringBuilder.append(child.getContent());
+                case CONTENT -> stringBuilder.append(child.getContent());
                 case GROUP -> this.compose(child, stringBuilder);
             }
         }
@@ -46,8 +46,7 @@ public class PlainChatComposer implements ChatComposer<String> {
     @Override
     public String composeJson(String json) {
         if (NMSUtil.isPaper()) {
-            Component component = GsonComponentSerializer.gson().deserialize(json);
-            return PlainTextComponentSerializer.plainText().serialize(component);
+            return this.composeAdventure().composeJson(json);
         } else {
             BaseComponent[] components = MessageUtils.jsonToBungee(json);
             return ChatColor.stripColor(TextComponent.toLegacyText(components));
@@ -60,7 +59,7 @@ public class PlainChatComposer implements ChatComposer<String> {
     }
 
     @Override
-    public ChatComposer.Adventure<String> composeAdventure() {
+    public Adventure composeAdventure() {
         return Adventure.INSTANCE;
     }
 
@@ -74,6 +73,11 @@ public class PlainChatComposer implements ChatComposer<String> {
 
         @Override
         public String compose(Component component) {
+            return PlainTextComponentSerializer.plainText().serialize(component);
+        }
+
+        private String composeJson(String json) {
+            Component component = GsonComponentSerializer.gson().deserialize(json);
             return PlainTextComponentSerializer.plainText().serialize(component);
         }
 

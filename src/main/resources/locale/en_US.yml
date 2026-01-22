@@ -82,6 +82,7 @@ command-ignorelist-separator: "&7, &e"
 
 # Message Command
 command-message-description: "Private message a player"
+console-sender-name: "&cConsole"
 
 # Mute Command
 command-mute-description: "Mute a player"
