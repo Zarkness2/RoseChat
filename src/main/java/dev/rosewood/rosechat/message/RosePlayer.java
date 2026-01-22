@@ -1,5 +1,6 @@
 package dev.rosewood.rosechat.message;
 
+import com.google.common.base.Suppliers;
 import dev.rosewood.rosechat.RoseChat;
 import dev.rosewood.rosechat.api.RoseChatAPI;
 import dev.rosewood.rosechat.api.event.channel.ChannelChangeEvent;
@@ -22,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -44,7 +46,7 @@ public class RosePlayer {
     private boolean isDiscordProxy;
     private OfflinePlayer offlinePlayer;
     private String name;
-    private String group;
+    private Supplier<String> group;
 
     private RosePlayer() {
         this.api = RoseChatAPI.getInstance();
@@ -57,7 +59,7 @@ public class RosePlayer {
 
         this.offlinePlayer = player;
         this.name = player.getName();
-        this.group = this.api.getVault() == null ? "default": this.api.getVault().getPrimaryGroup(player);
+        this.group = Suppliers.memoize(() -> this.api.getVault() == null ? "default": this.api.getVault().getPrimaryGroup(player));
     }
 
     /**
@@ -70,10 +72,10 @@ public class RosePlayer {
         if (commandSender instanceof Player player) {
             this.offlinePlayer = player;
             this.name = player.getName();
-            this.group = this.api.getVault() == null ? "default" : this.api.getVault().getPrimaryGroup(player);
+            this.group = Suppliers.memoize(() -> this.api.getVault() == null ? "default" : this.api.getVault().getPrimaryGroup(player));
         } else {
             this.name = this.consoleName;
-            this.group = "default";
+            this.group = () -> "default";
         }
     }
 
@@ -88,13 +90,13 @@ public class RosePlayer {
         if (player != null) {
             this.offlinePlayer = player;
             this.name = player.getName();
-            this.group = this.api.getVault() == null ?
-                    "default" : this.api.getVault().getPrimaryGroup(player);
+            this.group = Suppliers.memoize(() -> this.api.getVault() == null ?
+                    "default" : this.api.getVault().getPrimaryGroup(player));
         } else {
             this.offlinePlayer = offlinePlayer;
             this.name = offlinePlayer.getName();
-            this.group = this.api.getVault() == null ?
-                    "default" : this.api.getVault().getPrimaryGroup(null, offlinePlayer);
+            this.group = Suppliers.memoize(() -> this.api.getVault() == null ?
+                    "default" : this.api.getVault().getPrimaryGroup(null, offlinePlayer));
         }
     }
 
@@ -107,7 +109,7 @@ public class RosePlayer {
         this();
 
         this.name = name;
-        this.group = "default";
+        this.group = () -> "default";
         this.isDiscordProxy = isDiscordUser;
     }
 
@@ -120,7 +122,7 @@ public class RosePlayer {
         this();
 
         this.name = name;
-        this.group = group;
+        this.group = () -> group;
     }
 
     /**
@@ -134,7 +136,7 @@ public class RosePlayer {
 
         this.offlinePlayer = Bukkit.getOfflinePlayer(uuid);
         this.name = name;
-        this.group = group;
+        this.group = () -> group;
     }
 
     // Nickname Functions
@@ -646,8 +648,9 @@ public class RosePlayer {
        }
 
         // If the player is not available, check the group permissions as long as we have Vault
-        if (this.group != null && this.api.getVault() != null)
-            return !Settings.REQUIRE_PERMISSIONS.get() || this.api.getVault().groupHas((String) null, this.group, permission);
+        String group = this.group.get();
+        if (group != null && this.api.getVault() != null)
+            return !Settings.REQUIRE_PERMISSIONS.get() || this.api.getVault().groupHas((String) null, group, permission);
 
         // If none of the above worked, just allow it
         return true;
@@ -726,14 +729,14 @@ public class RosePlayer {
         if (this.group == null) {
             if (this.isPlayer()) {
                 Player onlinePlayer = this.offlinePlayer.getPlayer();
-                return this.group = (this.api.getVault() == null ?
-                        "default" : this.api.getVault().getPrimaryGroup(onlinePlayer));
+                return (this.group = Suppliers.memoize(() -> this.api.getVault() == null ?
+                        "default" : this.api.getVault().getPrimaryGroup(onlinePlayer))).get();
             } else {
                 return "default";
             }
         }
 
-        return this.group;
+        return this.group.get();
     }
 
     /**
@@ -741,7 +744,7 @@ public class RosePlayer {
      * @param group The group to use.
      */
     public void setPermissionGroup(String group) {
-        this.group = group;
+        this.group = () -> group;
     }
 
     /**
