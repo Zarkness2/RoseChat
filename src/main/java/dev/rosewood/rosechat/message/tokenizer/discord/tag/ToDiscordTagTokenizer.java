@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 public class ToDiscordTagTokenizer extends Tokenizer {
 
     public ToDiscordTagTokenizer() {
-        super("discord_tag");
+        super("to_discord_tag");
     }
 
     @Override

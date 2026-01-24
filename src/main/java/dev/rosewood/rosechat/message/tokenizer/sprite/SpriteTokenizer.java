@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 public class SpriteTokenizer extends Tokenizer {
 
-    public static final Pattern PATTERN = Pattern.compile("<sprite(?::([A-Za-z0-9._-]+|\"[A-Za-z0-9._:-]+\"))?:([^>]+)>");
+    private static final Pattern PATTERN = Pattern.compile("<sprite(?::([A-Za-z0-9._-]+|\"[A-Za-z0-9._:-]+\"))?:([A-Za-z0-9._/-]+)>");
     private static final String DEFAULT_ATLAS = "minecraft:blocks";
 
     public SpriteTokenizer() {
