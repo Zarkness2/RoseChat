@@ -21,6 +21,9 @@ public class HeadTokenizer extends Tokenizer {
 
     @Override
     public List<TokenizerResult> tokenize(TokenizerParams params) {
+        if (!HeadTokenContent.VALID_VERSION)
+            return List.of();
+
         String input = params.getInput();
 
         List<TokenizerResult> results = new ArrayList<>();

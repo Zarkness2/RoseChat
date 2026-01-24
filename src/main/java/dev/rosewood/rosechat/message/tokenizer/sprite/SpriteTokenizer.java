@@ -4,6 +4,7 @@ import dev.rosewood.rosechat.message.tokenizer.Token;
 import dev.rosewood.rosechat.message.tokenizer.Tokenizer;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerParams;
 import dev.rosewood.rosechat.message.tokenizer.TokenizerResult;
+import dev.rosewood.rosechat.message.tokenizer.content.HeadTokenContent;
 import dev.rosewood.rosechat.message.tokenizer.content.SpriteTokenContent;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,9 @@ public class SpriteTokenizer extends Tokenizer {
 
     @Override
     public List<TokenizerResult> tokenize(TokenizerParams params) {
+        if (!SpriteTokenContent.VALID_VERSION)
+            return List.of();
+
         String input = params.getInput();
 
         List<TokenizerResult> results = new ArrayList<>();
