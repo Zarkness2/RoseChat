@@ -150,7 +150,7 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
     }
 
     /**
-     * I'm not exactly sure why this is required but simply loading this class on Paper 1.21.11 causes it to give a NoClassDefFoundError for ChatObject even though it isn't used
+     * Used to avoid classloader errors on Paper and older versions of Spigot
      */
     private static class ChatObjectHelper {
 

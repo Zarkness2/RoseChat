@@ -83,24 +83,13 @@ public class FullyDecoratedAdventureChatComposer implements ChatComposer<Compone
                 yield componentBuilder;
             }
             case HeadTokenContent(String name, UUID uuid, String texture, boolean outerLayer) -> {
-                PlayerHeadObjectContents.Builder builder = ObjectContents.playerHead();
-                builder.hat(outerLayer);
-
-                if (name != null) {
-                    builder.name(name);
-                } else if (uuid != null) {
-                    builder.id(uuid);
-                } else if (texture != null) {
-                    builder.texture(Key.key(texture));
-                } else {
+                Component headComponent = ChatContentHelper.createHeadComponent(name, uuid, texture, outerLayer);
+                if (headComponent == null)
                     yield componentBuilder;
-                }
-
-                Component headComponent = Component.object(builder.build());
                 yield componentBuilder.append(contextDecorators.apply(headComponent, parent, !Settings.COLOR_HEADS_AND_SPRITES.get()));
             }
             case SpriteTokenContent(String atlas, String sprite) -> {
-                Component spriteComponent = Component.object(ObjectContents.sprite(Key.key(atlas), Key.key(sprite)));
+                Component spriteComponent = ChatContentHelper.createSpriteComponent(atlas, sprite);
                 yield componentBuilder.append(contextDecorators.apply(spriteComponent, parent, !Settings.COLOR_HEADS_AND_SPRITES.get()));
             }
         };
@@ -150,6 +139,34 @@ public class FullyDecoratedAdventureChatComposer implements ChatComposer<Compone
         @Override
         public Component compose(Component component) {
             return component;
+        }
+
+    }
+
+    /**
+     * Used to avoid classloader errors on older versions of Paper
+     */
+    private static class ChatContentHelper {
+
+        public static Component createHeadComponent(String name, UUID uuid, String texture, boolean outerLayer) {
+            PlayerHeadObjectContents.Builder builder = ObjectContents.playerHead();
+            builder.hat(outerLayer);
+
+            if (name != null) {
+                builder.name(name);
+            } else if (uuid != null) {
+                builder.id(uuid);
+            } else if (texture != null) {
+                builder.texture(Key.key(texture));
+            } else {
+                return null;
+            }
+
+            return Component.object(builder.build());
+        }
+
+        public static Component createSpriteComponent(String atlas, String sprite) {
+            return Component.object(ObjectContents.sprite(Key.key(atlas), Key.key(sprite)));
         }
 
     }

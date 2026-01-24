@@ -14,6 +14,7 @@ import dev.rosewood.rosechat.placeholder.DefaultPlaceholders;
 import java.util.UUID;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.ComponentBuilder.FormatRetention;
 import org.bukkit.Bukkit;
 
 public class BungeePacketListener extends PacketListener<BaseComponent[]> {
@@ -93,15 +94,15 @@ public class BungeePacketListener extends PacketListener<BaseComponent[]> {
 
         ComponentBuilder builder = new ComponentBuilder();
         if (Settings.DELETE_MESSAGE_SUFFIX.get()) {
-            builder.append(component);
+            builder.append(component, FormatRetention.NONE);
 
             if (button != null)
-                builder.append(button);
+                builder.append(button, FormatRetention.NONE);
         } else {
             if (button != null)
-                builder.append(button);
+                builder.append(button, FormatRetention.NONE);
 
-            builder.append(component);
+            builder.append(component, FormatRetention.NONE);
         }
 
         return builder.create();
