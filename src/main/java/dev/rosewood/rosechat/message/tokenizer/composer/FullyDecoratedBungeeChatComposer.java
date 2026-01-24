@@ -20,6 +20,7 @@ import net.md_5.bungee.api.chat.objects.PlayerObject;
 import net.md_5.bungee.api.chat.objects.SpriteObject;
 import net.md_5.bungee.api.chat.player.Profile;
 import net.md_5.bungee.api.chat.player.Property;
+import org.bukkit.NamespacedKey;
 
 public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseComponent[]> {
 
@@ -79,6 +80,9 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
     }
 
     private void appendContent(ComponentBuilder componentBuilder, StringBuilder contentBuilder, BungeeTokenDecorators contextDecorators, Token parent, TokenContent content) {
+        if (!content.isValid())
+            return;
+
         switch (content) {
             case TextTokenContent(String s) -> contentBuilder.append(s);
             case HeadTokenContent(String name, UUID uuid, String texture, boolean outerLayer) -> {
@@ -147,7 +151,7 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
     }
 
     /**
-     * I'm not exactly sure why this is required but simply loading this class on Paper 1.21.11 causes it to give a NoClassDefFoundError for ChatObject even though it isn't used
+     * Used to avoid classloader errors on Paper and older versions of Spigot
      */
     private static class ChatObjectHelper {
 
@@ -158,7 +162,11 @@ public class FullyDecoratedBungeeChatComposer implements ChatComposer<BaseCompon
             } else if (uuid != null) {
                 playerObject = new PlayerObject(new Profile(uuid), outerLayer);
             } else if (texture != null) {
-                playerObject = new PlayerObject(new Profile(new Property[]{ new Property("textures", texture)}), outerLayer);
+                // This doesn't actually work, seems like Bungee-chat might not support it?
+                NamespacedKey key = NamespacedKey.fromString(texture);
+                if (key == null)
+                    return null;
+                playerObject = new PlayerObject(new Profile(new Property[]{ new Property("texture", key.toString())}), outerLayer);
             } else {
                 return null;
             }

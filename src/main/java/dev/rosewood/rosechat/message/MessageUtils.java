@@ -479,57 +479,6 @@ public class MessageUtils {
                 Tokenizers.COLORS_BUNDLE);
         Set<String> missingPermissions = components.outputs().getMissingPermissions();
         return missingPermissions.isEmpty();
-
-//        Matcher colorMatcher = VALID_LEGACY_REGEX.matcher(str);
-//        Matcher hexMatcher = HEX_REGEX.matcher(str);
-//        Matcher gradientMatcher = GRADIENT_PATTERN.matcher(str);
-//        Matcher rainbowMatcher = RAINBOW_PATTERN.matcher(str);
-//
-//        String location = area.toString().toLowerCase();
-//        boolean hasColor = colorMatcher.find();
-//        boolean usePerColorPerms = Settings.USE_PER_COLOR_PERMISSIONS.get();
-//        boolean hasLocationPermission = sender.hasPermission("rosechat.color." + location);
-//        boolean hasColorPermission = hasColor && sender.hasPermission("rosechat." +
-//                ChatColor.getByChar(Character.toLowerCase(colorMatcher.group().charAt(1))).getName().toLowerCase() + "." + location);
-//        boolean canColor = !hasColor || (usePerColorPerms ? hasColorPermission && hasLocationPermission : hasLocationPermission);
-//        boolean canMagic = !str.contains("&k") || sender.hasPermission("rosechat.magic." + location);
-//        boolean canHex = !hexMatcher.find() || sender.hasPermission("rosechat.hex." + location);
-//        boolean canGradient = !gradientMatcher.find() || sender.hasPermission("rosechat.gradient." + location);
-//        boolean canRainbow = !rainbowMatcher.find() || sender.hasPermission("rosechat.rainbow." + location);
-//
-//        boolean canBold = !str.contains("&l") || sender.hasPermission("rosechat.bold." + location);
-//        boolean canUnderline = !str.contains("&n") || sender.hasPermission("rosechat.underline." + location);
-//        boolean canStrikethrough = !str.contains("&m") || sender.hasPermission("rosechat.strikethrough." + location);
-//        boolean canItalic = !str.contains("&o") || sender.hasPermission("rosechat.italic." + location);
-//        boolean canFormat = canBold && canUnderline && canStrikethrough && canItalic;
-//
-//        return canColor && canMagic && canFormat && canHex && canGradient && canRainbow;
-    }
-
-    public static BaseComponent[] appendDeleteButton(RosePlayer sender, PlayerData playerData, String messageId, String messageJson) {
-        ComponentBuilder builder = new ComponentBuilder();
-        String placeholder = Settings.DELETE_CLIENT_MESSAGE_FORMAT.get();
-
-        MessageContents results = RoseChatAPI.getInstance().parse(new RosePlayer(Bukkit.getConsoleSender()), sender, placeholder,
-                DefaultPlaceholders.getFor(sender, sender)
-                        .add("id", messageId)
-                        .add("type", "client").build());
-
-        BaseComponent[] deleteClientButton = results.buildComponents();
-        if (deleteClientButton == null || deleteClientButton.length == 0) {
-            playerData.getMessageLog().addDeletableMessage(new DeletableMessage(UUID.randomUUID(), messageJson, true));
-            return null;
-        }
-
-        if (Settings.DELETE_MESSAGE_SUFFIX.get()) {
-            builder.append(ChatComposer.decorated().composeJson(messageJson), ComponentBuilder.FormatRetention.NONE);
-            builder.append(deleteClientButton, ComponentBuilder.FormatRetention.NONE);
-        } else {
-            builder.append(deleteClientButton, ComponentBuilder.FormatRetention.NONE);
-            builder.append(ChatComposer.decorated().composeJson(messageJson), ComponentBuilder.FormatRetention.NONE);
-        }
-
-        return builder.create();
     }
 
     public static String bungeeToJson(BaseComponent[] components) {

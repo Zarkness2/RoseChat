@@ -2,7 +2,6 @@ package dev.rosewood.rosechat.message.tokenizer.content;
 
 import dev.rosewood.rosegarden.utils.NMSUtil;
 import java.util.UUID;
-import org.jetbrains.annotations.NotNull;
 
 public record HeadTokenContent(String name, UUID uuid, String texture, boolean outerLayer) implements TokenContent {
 

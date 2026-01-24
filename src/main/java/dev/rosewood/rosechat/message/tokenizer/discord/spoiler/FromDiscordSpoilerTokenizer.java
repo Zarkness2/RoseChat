@@ -18,7 +18,7 @@ public class FromDiscordSpoilerTokenizer extends Tokenizer {
     private static final Pattern PATTERN = Pattern.compile("\\|\\|(.*?)\\|\\|");
 
     public FromDiscordSpoilerTokenizer() {
-        super("from_discord");
+        super("from_discord_spoiler");
     }
 
     @Override
